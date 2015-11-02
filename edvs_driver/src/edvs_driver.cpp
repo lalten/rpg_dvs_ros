@@ -15,18 +15,12 @@
 
 #include "edvs_driver/edvs_driver.h"
 
+#include <stdexcept>
+
+#include <boost/bind.hpp>
+#include <boost/format.hpp>
+
 namespace dvs {
-
-extern "C" { 
-
-static void callback_wrapper(struct libusb_transfer *transfer) 
-{ 
-  EDVS_Driver *dvs_driver = (EDVS_Driver *)transfer->user_data;
-
-  dvs_driver->callback(transfer);
-} 
-
-} // extern "C"
 
 EDVS_Driver::EDVS_Driver(std::string dvs_serial_number, bool master) {
   // initialize parameters (min, max, value)
@@ -46,248 +40,54 @@ EDVS_Driver::EDVS_Driver(std::string dvs_serial_number, bool master) {
   wrapAdd = 0;
   lastTimestamp = 0;
 
-  libusb_init(NULL);
+  // Edvs::EventCallbackType cbf = boost::bind(&EDVS_Driver::callback, _1);
 
   device_mutex.lock();
-  if (open_device(dvs_serial_number)) {
-    std::cout << "Opened DVS with the following identification: " << camera_id << std::endl;
-  }
-  else {
-    if (dvs_serial_number.empty()) {
-      std::cout << "Could not find any DVS..." << std::endl;
-    }
-    else {
-      std::cout << "Could not find DVS with serial number " << dvs_serial_number << "..." << std::endl;
-    }
+  try {
+	  device = new Edvs::Device();
+	  capture = new Edvs::EventCapture(device, callback);
+  } catch (std::runtime_error &ex) {
+	  std::cerr << ex.what() <<std::endl;
   }
   device_mutex.unlock();
+
+  camera_id = dvs_serial_number;
+
 
   // put into slave mode?
   if (!master) {
     std::cout << "Setting camera (" << camera_id << ") as slave!" << std::endl;
     device_mutex.lock();
-
-    unsigned char enabled[1];
-    enabled[0] = 0;
-
-    libusb_control_transfer(device_handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-                            VENDOR_REQUEST_SET_SYNC_ENABLED, 0, 0, enabled, sizeof(enabled), 0);
+    device->WriteCommand("!ETS");
     device_mutex.unlock();
   }
+  // TODO: do we need to set master mode as well? are settings volatile?
 
-  thread = new boost::thread(boost::bind(&EDVS_Driver::run, this));
 }
 
 EDVS_Driver::~EDVS_Driver() {
   device_mutex.lock();
-  close_device();
+  delete capture;
+  delete device;
   device_mutex.unlock();
 }
 
-bool EDVS_Driver::open_device(std::string dvs_serial_number) {
+void EDVS_Driver::callback(const std::vector<Edvs::Event>& events) {
+  // Handle data.
+  event_buffer_mutex.lock();
 
-  // get device list
-  libusb_device **list = NULL;
-  ssize_t count = libusb_get_device_list(NULL, &list);
-
-  // iterate over all USB devices
-  for (size_t idx = 0; idx < count; ++idx) {
-      libusb_device *device = list[idx];
-      libusb_device_descriptor desc = {0};
-
-      int rc = libusb_get_device_descriptor(device, &desc);
-      assert(rc == 0);
-
-//      printf("Vendor:Device = %04x:%04x\n", desc.idVendor, desc.idProduct);
-
-      if (DVS128_VID == desc.idVendor && DVS128_PID == desc.idProduct) {
-
-        // Open device to see its serial number
-        int e = libusb_open(device, &device_handle);
-        if (e) {
-          printf("Error opening device... Error code: %d", e);
-          continue;
-        }
-
-        unsigned char sSerial[256];
-
-        e = libusb_get_string_descriptor_ascii(device_handle, desc.iSerialNumber, sSerial, sizeof(sSerial));
-        if (e < 0) {
-          std::cout << "libusb: get error code: " << e << std::endl;
-          libusb_close(device_handle);
-        }
-
-        if (std::string(reinterpret_cast<char*>(sSerial)) == dvs_serial_number || dvs_serial_number.empty()) {
-
-          // claim interface
-          libusb_claim_interface(device_handle, 0);
-
-          // figure out precise product
-          unsigned char sProduct[256];
-          e = libusb_get_string_descriptor_ascii(device_handle, desc.iProduct, sProduct, sizeof(sProduct));
-          if (e < 0) {
-            std::cout << "libusb: get error code: " << e << std::endl;
-            libusb_close(device_handle);
-          }
-
-          camera_id = std::string(reinterpret_cast<char*>(sProduct)) + "-" + std::string(reinterpret_cast<char*>(sSerial));
-
-          // alloc transfer and setup
-          transfer = libusb_alloc_transfer(0);
-
-          transfer->length = (int) bufferSize;
-          buffer = new unsigned char[bufferSize];
-          transfer->buffer = buffer;
-
-          transfer->dev_handle = device_handle;
-          transfer->endpoint = USB_IO_ENDPOINT;
-          transfer->type = LIBUSB_TRANSFER_TYPE_BULK;
-          transfer->callback = callback_wrapper;
-          transfer->user_data = this;
-          transfer->timeout = 0;
-          transfer->flags = LIBUSB_TRANSFER_FREE_BUFFER;
-
-          //  libusb_submit_transfer(transfer);
-          int status = libusb_submit_transfer(transfer);
-          if (status != LIBUSB_SUCCESS) {
-            std::cout << "Unable to submit libusb transfer: " << status << std::endl;
-
-            // The transfer buffer is freed automatically here thanks to
-            // the LIBUSB_TRANSFER_FREE_BUFFER flag set above.
-            libusb_free_transfer(transfer);
-          }
-
-          return true;
-        }
-
-        libusb_close(device_handle);
-      }
-  }
-  return false;
-}
-
-void EDVS_Driver::close_device() {
-  // stop thread
-  thread->join();
-
-  // close transfer
-  int status = libusb_cancel_transfer(transfer);
-  if (status != LIBUSB_SUCCESS && status != LIBUSB_ERROR_NOT_FOUND) {
-    std::cout << "Unable to cancel libusb transfer: " << status << std::endl;
+  for (std::vector<Edvs::Event>::const_iterator i=events.begin(); i<events.end(); ++i) {
+  	// TODO: where do we get the timestamp from?
+  	Event e;
+  	e.x=i->x;
+  	e.y=i->y;
+  	e.polarity=i->parity;
+  	e.timestamp=0;
+  	event_buffer.push_back(e);
+  	// std::cout << "Event: <x, y, t, p> = <" << x << ", " << y << ", " << timestamp << ", " << polarity << ">" << std::endl;
   }
 
-  libusb_close(device_handle);
-  libusb_exit(NULL);
-}
-
-void EDVS_Driver::run() {
-  timeval te;
-  te.tv_sec = 0;
-  te.tv_usec = 1000000;
-
-  libusb_control_transfer(device_handle,
-                          LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-                          VENDOR_REQUEST_START_TRANSFER, 0, 0, NULL, 0, 0);
-
-  try {
-    int completed;
-    while(true) {
-      device_mutex.lock();
-      libusb_handle_events_timeout(NULL, &te);
-      device_mutex.unlock();
-    }
-  }
-  catch(boost::thread_interrupted const& ) {
-    //clean resources
-    std::cout << "Worker thread interrupted!" << std::endl;
-  }
-
-  libusb_control_transfer(device_handle,
-                          LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-                          VENDOR_REQUEST_STOP_TRANSFER, 0, 0, NULL, 0, 0);
-}
-
-void EDVS_Driver::callback(struct libusb_transfer *transfer) {
-  if (transfer->status == LIBUSB_TRANSFER_COMPLETED) {
-    // Handle data.
-    event_buffer_mutex.lock();
-    event_translator(transfer->buffer, (size_t) transfer->actual_length);
-    event_buffer_mutex.unlock();
-  }
-
-  if (transfer->status != LIBUSB_TRANSFER_CANCELLED && transfer->status != LIBUSB_TRANSFER_NO_DEVICE) {
-    // Submit transfer again.
-    if (libusb_submit_transfer(transfer) == LIBUSB_SUCCESS) {
-      return;
-    }
-  }
-
-  // Cannot recover (cancelled, no device, or other critical error).
-  // Signal this by adjusting the counter, free and exit.
-  libusb_free_transfer(transfer);
-}
-
-void EDVS_Driver::event_translator(uint8_t *buffer, size_t bytesSent) {
-  // Truncate off any extra partial event.
-  bytesSent &= (size_t) ~0x03;
-
-  for (size_t i = 0; i < bytesSent; i += 4) {
-    if ((buffer[i + 3] & 0x80) == 0x80) {
-      // timestamp bit 15 is one -> wrap: now we need to increment
-      // the wrapAdd, uses only 14 bit timestamps
-      wrapAdd += 0x4000;
-
-      // Detect big timestamp wrap-around.
-      if (wrapAdd == 0) {
-        // Reset lastTimestamp to zero at this point, so we can again
-        // start detecting overruns of the 32bit value.
-        lastTimestamp = 0;
-      }
-    }
-    else if ((buffer[i + 3] & 0x40) == 0x40) {
-      // timestamp bit 14 is one -> wrapAdd reset: this firmware
-      // version uses reset events to reset timestamps
-      wrapAdd = 0;
-      lastTimestamp = 0;
-    }
-    else {
-      // address is LSB MSB (USB is LE)
-      uint16_t addressUSB = le16toh(*((uint16_t * ) (&buffer[i])));
-
-      // same for timestamp, LSB MSB (USB is LE)
-      // 15 bit value of timestamp in 1 us tick
-      uint16_t timestampUSB = le16toh(*((uint16_t * ) (&buffer[i + 2])));
-
-      // Expand to 32 bits. (Tick is 1µs already.)
-      uint64_t timestamp = timestampUSB + wrapAdd;
-
-      // Check monotonicity of timestamps.
-      if (timestamp < lastTimestamp) {
-         std::cout << "DVS128: non-monotonic time-stamp detected: lastTimestamp=" << lastTimestamp << ", timestamp=" << timestamp << "." << std::endl;
-      }
-
-      lastTimestamp = timestamp;
-
-      // Special Trigger Event (MSB is set)
-      if ((addressUSB & DVS128_SYNC_EVENT_MASK) != 0) {
-        std::cout << "got sync event on camera " << camera_id << "at " << timestamp << std::endl;
-      }
-      else {
-        // Invert x values (flip along the x axis).
-        uint16_t x = (uint16_t) (127 - ((uint16_t) ((addressUSB >> DVS128_X_ADDR_SHIFT) & DVS128_X_ADDR_MASK)));
-        uint16_t y = (uint16_t) (127 - ((uint16_t) ((addressUSB >> DVS128_Y_ADDR_SHIFT) & DVS128_Y_ADDR_MASK)));
-        bool polarity = (((addressUSB >> DVS128_POLARITY_SHIFT) & DVS128_POLARITY_MASK) == 0) ? (1) : (0);
-
-        //        std::cout << "Event: <x, y, t, p> = <" << x << ", " << y << ", " << timestamp << ", " << polarity << ">" << std::endl;
-        Event e;
-        e.x = x;
-        e.y = y;
-        e.timestamp = timestamp;
-        e.polarity = polarity;
-        event_buffer.push_back(e);
-      }
-    }
-  }
+  event_buffer_mutex.unlock();
 }
 
 std::vector<Event> EDVS_Driver::get_events() {
@@ -300,8 +100,7 @@ std::vector<Event> EDVS_Driver::get_events() {
 
 void EDVS_Driver::resetTimestamps() {
   device_mutex.lock();
-  libusb_control_transfer(device_handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-                          VENDOR_REQUEST_RESET_TIMESTAMPS, 0, 0, NULL, 0, 0);
+  device->WriteCommand("!ET0\n");
   device_mutex.unlock();
 }
 
@@ -322,6 +121,9 @@ bool EDVS_Driver::change_parameter(std::string parameter, uint32_t value) {
 bool EDVS_Driver::change_parameters(uint32_t cas, uint32_t injGnd, uint32_t reqPd, uint32_t puX,
                                    uint32_t diffOff, uint32_t req, uint32_t refr, uint32_t puY,
                                    uint32_t diffOn, uint32_t diff, uint32_t foll, uint32_t Pr) {
+
+	// TODO: does the eDVS support that many biases?
+
   change_parameter("cas", cas);
   change_parameter("injGnd", injGnd);
   change_parameter("reqPd", reqPd);
@@ -401,10 +203,19 @@ bool EDVS_Driver::send_parameters() {
   biases[34] = (uint8_t) (Pr >> 8);
   biases[35] = (uint8_t) (Pr >> 0);
 
+  // see http://inilabs.com/support/edvs/#h.bctg2sgwitln
+  std::stringstream cmdstr;
+  boost::format f("!B%d=%d\n");
+  for (int i=0; i<12*3; ++i) {
+	  cmdstr << f % i % biases[i];
+  }
+  cmdstr << "!BF\n";
+
   device_mutex.lock();
-  libusb_control_transfer(device_handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
-                          VENDOR_REQUEST_SEND_BIASES, 0, 0, biases, sizeof(biases), 0);
+  device->WriteCommand(cmdstr.str());
   device_mutex.unlock();
+
+  return true;
 }
 
 } // namespace
