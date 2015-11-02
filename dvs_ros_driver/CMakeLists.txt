@@ -5,6 +5,7 @@ project(dvs_ros_driver)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   dvs_driver
+  edvs_driver
   dvs_msgs
   std_msgs
   dynamic_reconfigure
@@ -25,6 +26,7 @@ catkin_package(
   CATKIN_DEPENDS 
   	roscpp 
   	dvs_driver 
+  	edvs_driver 
   	dvs_msgs 
   	std_msgs
   	dynamic_reconfigure

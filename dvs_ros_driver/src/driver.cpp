@@ -31,7 +31,7 @@ DvsRosDriver::DvsRosDriver()
   nh_private.param<double>("reset_timestamps_delay", reset_timestamps_delay, -1.0);
 
   // start driver
-  driver = new dvs::DVS_Driver(dvs_serial_number, master);
+  driver = new dvs::EDVS_Driver(dvs_serial_number, master);
 
   // camera info handling
   cameraInfoManager = new camera_info_manager::CameraInfoManager(nh, driver->get_camera_id());
