@@ -55,10 +55,10 @@ struct Event {
   uint64_t timestamp;
 };
 
-class DVS_Driver {
+class EDVS_Driver {
 public:
-  DVS_Driver(std::string dvs_serial_number = "", bool master = true);
-  ~DVS_Driver();
+  EDVS_Driver(std::string dvs_serial_number = "", bool master = true);
+  ~EDVS_Driver();
 
   std::vector<Event> get_events();
 

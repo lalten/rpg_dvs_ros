@@ -21,14 +21,14 @@ extern "C" {
 
 static void callback_wrapper(struct libusb_transfer *transfer) 
 { 
-  DVS_Driver *dvs_driver = (DVS_Driver *)transfer->user_data;
+  EDVS_Driver *dvs_driver = (EDVS_Driver *)transfer->user_data;
 
   dvs_driver->callback(transfer);
 } 
 
 } // extern "C"
 
-DVS_Driver::DVS_Driver(std::string dvs_serial_number, bool master) {
+EDVS_Driver::EDVS_Driver(std::string dvs_serial_number, bool master) {
   // initialize parameters (min, max, value)
   parameters.insert(std::pair<std::string, Parameter>("cas", Parameter(0, 16777215, 1992)));
   parameters.insert(std::pair<std::string, Parameter>("injGnd", Parameter(0, 16777215, 1108364)));
@@ -75,16 +75,16 @@ DVS_Driver::DVS_Driver(std::string dvs_serial_number, bool master) {
     device_mutex.unlock();
   }
 
-  thread = new boost::thread(boost::bind(&DVS_Driver::run, this));
+  thread = new boost::thread(boost::bind(&EDVS_Driver::run, this));
 }
 
-DVS_Driver::~DVS_Driver() {
+EDVS_Driver::~EDVS_Driver() {
   device_mutex.lock();
   close_device();
   device_mutex.unlock();
 }
 
-bool DVS_Driver::open_device(std::string dvs_serial_number) {
+bool EDVS_Driver::open_device(std::string dvs_serial_number) {
 
   // get device list
   libusb_device **list = NULL;
@@ -166,7 +166,7 @@ bool DVS_Driver::open_device(std::string dvs_serial_number) {
   return false;
 }
 
-void DVS_Driver::close_device() {
+void EDVS_Driver::close_device() {
   // stop thread
   thread->join();
 
@@ -180,7 +180,7 @@ void DVS_Driver::close_device() {
   libusb_exit(NULL);
 }
 
-void DVS_Driver::run() {
+void EDVS_Driver::run() {
   timeval te;
   te.tv_sec = 0;
   te.tv_usec = 1000000;
@@ -207,7 +207,7 @@ void DVS_Driver::run() {
                           VENDOR_REQUEST_STOP_TRANSFER, 0, 0, NULL, 0, 0);
 }
 
-void DVS_Driver::callback(struct libusb_transfer *transfer) {
+void EDVS_Driver::callback(struct libusb_transfer *transfer) {
   if (transfer->status == LIBUSB_TRANSFER_COMPLETED) {
     // Handle data.
     event_buffer_mutex.lock();
@@ -227,7 +227,7 @@ void DVS_Driver::callback(struct libusb_transfer *transfer) {
   libusb_free_transfer(transfer);
 }
 
-void DVS_Driver::event_translator(uint8_t *buffer, size_t bytesSent) {
+void EDVS_Driver::event_translator(uint8_t *buffer, size_t bytesSent) {
   // Truncate off any extra partial event.
   bytesSent &= (size_t) ~0x03;
 
@@ -290,7 +290,7 @@ void DVS_Driver::event_translator(uint8_t *buffer, size_t bytesSent) {
   }
 }
 
-std::vector<Event> DVS_Driver::get_events() {
+std::vector<Event> EDVS_Driver::get_events() {
   event_buffer_mutex.lock();
   std::vector<Event> buffer_copy = event_buffer;
   event_buffer.clear();
@@ -298,14 +298,14 @@ std::vector<Event> DVS_Driver::get_events() {
   return buffer_copy;
 }
 
-void DVS_Driver::resetTimestamps() {
+void EDVS_Driver::resetTimestamps() {
   device_mutex.lock();
   libusb_control_transfer(device_handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
                           VENDOR_REQUEST_RESET_TIMESTAMPS, 0, 0, NULL, 0, 0);
   device_mutex.unlock();
 }
 
-bool DVS_Driver::change_parameter(std::string parameter, uint32_t value) {
+bool EDVS_Driver::change_parameter(std::string parameter, uint32_t value) {
   // does parameter exist?
   if (parameters.find(parameter) != parameters.end()) {
     // did it change? (only if within range)
@@ -319,7 +319,7 @@ bool DVS_Driver::change_parameter(std::string parameter, uint32_t value) {
     return false;
 }
 
-bool DVS_Driver::change_parameters(uint32_t cas, uint32_t injGnd, uint32_t reqPd, uint32_t puX,
+bool EDVS_Driver::change_parameters(uint32_t cas, uint32_t injGnd, uint32_t reqPd, uint32_t puX,
                                    uint32_t diffOff, uint32_t req, uint32_t refr, uint32_t puY,
                                    uint32_t diffOn, uint32_t diff, uint32_t foll, uint32_t Pr) {
   change_parameter("cas", cas);
@@ -338,7 +338,7 @@ bool DVS_Driver::change_parameters(uint32_t cas, uint32_t injGnd, uint32_t reqPd
   return send_parameters();
 }
 
-bool DVS_Driver::send_parameters() {
+bool EDVS_Driver::send_parameters() {
   uint8_t biases[12 * 3];
 
   uint32_t cas = parameters["cas"].get_value();
