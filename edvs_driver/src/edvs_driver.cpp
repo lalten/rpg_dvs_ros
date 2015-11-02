@@ -44,7 +44,7 @@ EDVS_Driver::EDVS_Driver(std::string dvs_serial_number, bool master) {
 
   device_mutex.lock();
   try {
-	  device = new Edvs::Device();
+	  device = new Edvs::Device(Edvs::B1000k);
 	  capture = new Edvs::EventCapture(*device, cbf);
   } catch (std::runtime_error &ex) {
 	  std::cerr << ex.what() <<std::endl;
@@ -84,7 +84,7 @@ void EDVS_Driver::callback(const std::vector<Edvs::Event>& events) {
   	e.polarity=i->parity;
   	e.timestamp=0;
   	event_buffer.push_back(e);
-  	// std::cout << "Event: <x, y, t, p> = <" << x << ", " << y << ", " << timestamp << ", " << polarity << ">" << std::endl;
+  	std::cout << "Event: <x, y, t, p> = <" << e.x << ", " << e.y << ", " << e.timestamp << ", " << e.polarity << ">" << std::endl;
   }
 
   event_buffer_mutex.unlock();
@@ -122,8 +122,6 @@ bool EDVS_Driver::change_parameters(uint32_t cas, uint32_t injGnd, uint32_t reqP
                                    uint32_t diffOff, uint32_t req, uint32_t refr, uint32_t puY,
                                    uint32_t diffOn, uint32_t diff, uint32_t foll, uint32_t Pr) {
 
-	// TODO: does the eDVS support that many biases?
-
   change_parameter("cas", cas);
   change_parameter("injGnd", injGnd);
   change_parameter("reqPd", reqPd);
@@ -143,72 +141,25 @@ bool EDVS_Driver::change_parameters(uint32_t cas, uint32_t injGnd, uint32_t reqP
 bool EDVS_Driver::send_parameters() {
   uint8_t biases[12 * 3];
 
-  uint32_t cas = parameters["cas"].get_value();
-  biases[0] = (uint8_t) (cas >> 16);
-  biases[1] = (uint8_t) (cas >> 8);
-  biases[2] = (uint8_t) (cas >> 0);
-
-  uint32_t injGnd = parameters["injGnd"].get_value();
-  biases[3] = (uint8_t) (injGnd >> 16);
-  biases[4] = (uint8_t) (injGnd >> 8);
-  biases[5] = (uint8_t) (injGnd >> 0);
-
-  uint32_t reqPd = parameters["reqPd"].get_value();
-  biases[6] = (uint8_t) (reqPd >> 16);
-  biases[7] = (uint8_t) (reqPd >> 8);
-  biases[8] = (uint8_t) (reqPd >> 0);
-
-  uint32_t puX = parameters["puX"].get_value();
-  biases[9] = (uint8_t) (puX >> 16);
-  biases[10] = (uint8_t) (puX >> 8);
-  biases[11] = (uint8_t) (puX >> 0);
-
-  uint32_t diffOff = parameters["diffOff"].get_value();
-  biases[12] = (uint8_t) (diffOff >> 16);
-  biases[13] = (uint8_t) (diffOff >> 8);
-  biases[14] = (uint8_t) (diffOff >> 0);
-
-  uint32_t req = parameters["req"].get_value();
-  biases[15] = (uint8_t) (req >> 16);
-  biases[16] = (uint8_t) (req >> 8);
-  biases[17] = (uint8_t) (req >> 0);
-
-  uint32_t refr = parameters["refr"].get_value();
-  biases[18] = (uint8_t) (refr >> 16);
-  biases[19] = (uint8_t) (refr >> 8);
-  biases[20] = (uint8_t) (refr >> 0);
-
-  uint32_t puY = parameters["puY"].get_value();
-  biases[21] = (uint8_t) (puY >> 16);
-  biases[22] = (uint8_t) (puY >> 8);
-  biases[23] = (uint8_t) (puY >> 0);
-
-  uint32_t diffOn = parameters["diffOn"].get_value();
-  biases[24] = (uint8_t) (diffOn >> 16);
-  biases[25] = (uint8_t) (diffOn >> 8);
-  biases[26] = (uint8_t) (diffOn >> 0);
-
-  uint32_t diff = parameters["diff"].get_value();
-  biases[27] = (uint8_t) (diff >> 16);
-  biases[28] = (uint8_t) (diff >> 8);
-  biases[29] = (uint8_t) (diff >> 0);
-
-  uint32_t foll = parameters["foll"].get_value();
-  biases[30] = (uint8_t) (foll >> 16);
-  biases[31] = (uint8_t) (foll >> 8);
-  biases[32] = (uint8_t) (foll >> 0);
-
-  uint32_t Pr = parameters["Pr"].get_value();
-  biases[33] = (uint8_t) (Pr >> 16);
-  biases[34] = (uint8_t) (Pr >> 8);
-  biases[35] = (uint8_t) (Pr >> 0);
-
   // see http://inilabs.com/support/edvs/#h.bctg2sgwitln
   std::stringstream cmdstr;
   boost::format f("!B%d=%d\n");
-  for (int i=0; i<12*3; ++i) {
-	  cmdstr << f % i % biases[i];
-  }
+
+  int i=0;
+
+  cmdstr << f % i++ %  parameters["cas"].get_value();
+  cmdstr << f % i++ %  parameters["injGnd"].get_value();
+  cmdstr << f % i++ %  parameters["reqPd"].get_value();
+  cmdstr << f % i++ %  parameters["puX"].get_value();
+  cmdstr << f % i++ %  parameters["diffOff"].get_value();
+  cmdstr << f % i++ %  parameters["req"].get_value();
+  cmdstr << f % i++ %  parameters["refr"].get_value();
+  cmdstr << f % i++ %  parameters["puY"].get_value();
+  cmdstr << f % i++ %  parameters["diffOn"].get_value();
+  cmdstr << f % i++ %  parameters["diff"].get_value();
+  cmdstr << f % i++ %  parameters["foll"].get_value();
+  cmdstr << f % i++ %  parameters["Pr"].get_value();
+
   cmdstr << "!BF\n";
 
   device_mutex.lock();

@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(dvs_ros_driver)
 
+set(ROS_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug)
+
 # search for everything we need to build the package
 find_package(catkin REQUIRED COMPONENTS
   roscpp
