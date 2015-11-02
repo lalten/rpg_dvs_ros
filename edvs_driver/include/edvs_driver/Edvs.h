@@ -264,7 +264,7 @@ namespace Edvs
 						buffA->push_back(e);
 					}
 #ifdef VERBOSE
-					std::cout << events.size();
+					//std::cout << events.size();
 #endif
 					event_callback_(*buffA);
 					std::swap(buffA, buffB);
