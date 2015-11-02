@@ -16,8 +16,8 @@
 #ifndef EDVS_DRIVER_H_
 #define EDVS_DRIVER_H_
 
-#include <libusb-1.0/libusb.h>
-#include <boost/thread.hpp>
+#include "Edvs.h"
+
 #include <vector>
 #include <iostream>
 #include <map>
@@ -25,13 +25,6 @@
 #include <stdio.h>
 
 namespace dvs {
-
-// DVS USB interface
-#define DVS128_VID 0x152A
-#define DVS128_PID 0x8400
-#define DVS128_DID_TYPE 0x00
-
-#define USB_IO_ENDPOINT 0x86
 
 // DVS data decoding masks
 #define DVS128_POLARITY_SHIFT 0
@@ -41,13 +34,6 @@ namespace dvs {
 #define DVS128_X_ADDR_SHIFT 1
 #define DVS128_X_ADDR_MASK 0x007F
 #define DVS128_SYNC_EVENT_MASK 0x8000
-
-// USB vendor requests
-#define VENDOR_REQUEST_START_TRANSFER 0xB3
-#define VENDOR_REQUEST_STOP_TRANSFER 0xB4
-#define VENDOR_REQUEST_SEND_BIASES 0xB8
-#define VENDOR_REQUEST_SET_SYNC_ENABLED 0xBE
-#define VENDOR_REQUEST_RESET_TIMESTAMPS 0xBB
 
 struct Event {
   uint16_t x, y;
@@ -66,7 +52,7 @@ public:
                          uint32_t diffOff, uint32_t req, uint32_t refr, uint32_t puY,
                          uint32_t diffOn, uint32_t diff, uint32_t foll, uint32_t Pr);
 
-  void callback(struct libusb_transfer *transfer);
+  void callback(const std::vector<Edvs::Event>& events);
 
   void resetTimestamps();
 
@@ -78,20 +64,12 @@ private:
   bool change_parameter(std::string parameter, uint32_t value);
   bool send_parameters();
 
-  bool open_device(std::string dvs_serial_number = "");
-  void close_device();
-
   boost::mutex event_buffer_mutex;
   boost::mutex device_mutex;
-  boost::thread* thread;
-  void run();
 
-  void event_translator(uint8_t *buffer, size_t bytesSent);
-
-  // USB handle and buffer
-  libusb_device_handle *device_handle;
-  struct libusb_transfer *transfer;
-  unsigned char *buffer;
+  // Device handle and capture object
+  Edvs::Device *device;
+  Edvs::EventCapture *capture;
 
   // event buffer
   std::vector<dvs::Event> event_buffer;
