@@ -40,12 +40,12 @@ EDVS_Driver::EDVS_Driver(std::string dvs_serial_number, bool master) {
   wrapAdd = 0;
   lastTimestamp = 0;
 
-  // Edvs::EventCallbackType cbf = boost::bind(&EDVS_Driver::callback, _1);
+  Edvs::EventCallbackType cbf = boost::bind(&EDVS_Driver::callback, this, _1);
 
   device_mutex.lock();
   try {
 	  device = new Edvs::Device();
-	  capture = new Edvs::EventCapture(device, callback);
+	  capture = new Edvs::EventCapture(*device, cbf);
   } catch (std::runtime_error &ex) {
 	  std::cerr << ex.what() <<std::endl;
   }
