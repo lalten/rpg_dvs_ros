@@ -24,6 +24,7 @@
 #include <string>
 #include <stdio.h>
 
+
 namespace dvs {
 
 // DVS USB interface

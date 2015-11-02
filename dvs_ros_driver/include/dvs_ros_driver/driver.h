@@ -29,7 +29,8 @@
 #include <std_msgs/Empty.h>
 
 // DVS driver
-#include <dvs_driver/dvs_driver.h>
+//#include <dvs_driver/dvs_driver.h>
+#include <edvs_driver/edvs_driver.h>
 
 // dynamic reconfigure
 #include <dynamic_reconfigure/server.h>
@@ -54,7 +55,7 @@ private:
   ros::NodeHandle nh;
   ros::Publisher event_array_pub;
   ros::Publisher camera_info_pub;
-  dvs::DVS_Driver *driver;
+  dvs::EDVS_Driver *driver;
 
   dynamic_reconfigure::Server<dvs_ros_driver::DVS_ROS_DriverConfig> server;
   dynamic_reconfigure::Server<dvs_ros_driver::DVS_ROS_DriverConfig>::CallbackType f;

@@ -8,20 +8,19 @@ find_package(catkin)
 find_package(Boost REQUIRED COMPONENTS thread)
 
 include(FindPkgConfig)
-#pkg_check_modules(LIBUSB1 REQUIRED libusb-1.0)
-# TODO: does libedvsc++ a pkgconfig?
+pkg_check_modules(LIBUSB1 REQUIRED libusb-1.0)
 
 # export the dependencis of this package for who ever depends on us
 catkin_package(
-#  INCLUDE_DIRS include ${LIBUSB1_INCLUDE_DIRS}
-#  DEPENDS libusb-1.0
+  INCLUDE_DIRS include ${LIBUSB1_INCLUDE_DIRS}
+  DEPENDS libusb-1.0
   LIBRARIES edvs_driver
 )
 
 # tell catkin where to find the headers for this project
 include_directories(
   include
-#  ${LIBUSB1_INCLUDE_DIRS}
+  ${LIBUSB1_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
 )
 
@@ -31,7 +30,7 @@ add_library(edvs_driver
 )
 
 target_link_libraries(edvs_driver
-#  ${LIBUSB1_LIBRARIES}
+  ${LIBUSB1_LIBRARIES}
   ${Boost_LIBRARIES}
 )
 
