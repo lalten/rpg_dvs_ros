@@ -20,6 +20,8 @@
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 
+#include <ros/ros.h>
+
 namespace dvs {
 
 EDVS_Driver::EDVS_Driver(std::string dvs_serial_number, bool master) {
@@ -43,7 +45,7 @@ EDVS_Driver::EDVS_Driver(std::string dvs_serial_number, bool master) {
 
   device_mutex.lock();
   try {
-	  device = new Edvs::Device(Edvs::B1000k);
+	  device = new Edvs::Device(Edvs::B4000k);
 	  capture = new Edvs::EventCapture(*device, cbf);
   } catch (std::runtime_error &ex) {
 	  std::cerr << ex.what() <<std::endl;
@@ -162,7 +164,8 @@ bool EDVS_Driver::send_parameters() {
   cmdstr << "!BF\n";
 
   device_mutex.lock();
-  device->WriteCommand(cmdstr.str());
+  ROS_INFO("Sending: \"%s\"", cmdstr.str().c_str());
+//  device->WriteCommand(cmdstr.str());
   device_mutex.unlock();
 
   return true;
