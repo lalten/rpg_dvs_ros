@@ -26,15 +26,6 @@
 
 namespace dvs {
 
-// DVS data decoding masks
-#define DVS128_POLARITY_SHIFT 0
-#define DVS128_POLARITY_MASK 0x0001
-#define DVS128_Y_ADDR_SHIFT 8
-#define DVS128_Y_ADDR_MASK 0x007F
-#define DVS128_X_ADDR_SHIFT 1
-#define DVS128_X_ADDR_MASK 0x007F
-#define DVS128_SYNC_EVENT_MASK 0x8000
-
 struct Event {
   uint16_t x, y;
   bool polarity;
@@ -60,6 +51,10 @@ public:
     return camera_id;
   }
 
+  inline bool isDeviceRunning() {
+	  return device != nullptr;
+  }
+
 private:
   bool change_parameter(std::string parameter, uint32_t value);
   bool send_parameters();
@@ -68,8 +63,8 @@ private:
   boost::mutex device_mutex;
 
   // Device handle and capture object
-  Edvs::Device *device;
-  Edvs::EventCapture *capture;
+  Edvs::Device *device = nullptr;
+  Edvs::EventCapture *capture = nullptr;
 
   // event buffer
   std::vector<dvs::Event> event_buffer;
@@ -78,7 +73,6 @@ private:
   static const uint32_t bufferNumber = 8;
   static const uint32_t bufferSize = 4096;
 
-  uint64_t wrapAdd;
   uint64_t lastTimestamp;
 
   class Parameter {
