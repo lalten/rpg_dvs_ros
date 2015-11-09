@@ -24,20 +24,19 @@ namespace dvs {
 
 EDVS_Driver::EDVS_Driver(std::string dvs_serial_number, bool master) {
   // initialize parameters (min, max, value)
-  parameters.insert(std::pair<std::string, Parameter>("cas", Parameter(0, 16777215, 1992)));
+  parameters.insert(std::pair<std::string, Parameter>("cas", Parameter(0, 16777215, 54)));
   parameters.insert(std::pair<std::string, Parameter>("injGnd", Parameter(0, 16777215, 1108364)));
   parameters.insert(std::pair<std::string, Parameter>("reqPd", Parameter(0, 16777215, 16777215)));
   parameters.insert(std::pair<std::string, Parameter>("puX", Parameter(0, 16777215, 8159221)));
   parameters.insert(std::pair<std::string, Parameter>("diffOff", Parameter(0, 16777215, 132)));
-  parameters.insert(std::pair<std::string, Parameter>("req", Parameter(0, 16777215, 309590)));
-  parameters.insert(std::pair<std::string, Parameter>("refr", Parameter(0, 16777215, 969)));
+  parameters.insert(std::pair<std::string, Parameter>("req", Parameter(0, 16777215, 159147)));
+  parameters.insert(std::pair<std::string, Parameter>("refr", Parameter(0, 16777215, 6)));
   parameters.insert(std::pair<std::string, Parameter>("puY", Parameter(0, 16777215, 16777215)));
-  parameters.insert(std::pair<std::string, Parameter>("diffOn", Parameter(0, 16777215, 209996)));
-  parameters.insert(std::pair<std::string, Parameter>("diff", Parameter(0, 16777215, 13125)));
-  parameters.insert(std::pair<std::string, Parameter>("foll", Parameter(0, 16777215, 271)));
-  parameters.insert(std::pair<std::string, Parameter>("Pr", Parameter(0, 16777215, 217)));
+  parameters.insert(std::pair<std::string, Parameter>("diffOn", Parameter(0, 16777215, 482443)));
+  parameters.insert(std::pair<std::string, Parameter>("diff", Parameter(0, 16777215, 30153)));
+  parameters.insert(std::pair<std::string, Parameter>("foll", Parameter(0, 16777215, 51)));
+  parameters.insert(std::pair<std::string, Parameter>("Pr", Parameter(0, 16777215, 3)));
 
-  wrapAdd = 0;
   lastTimestamp = 0;
 
   Edvs::EventCallbackType cbf = boost::bind(&EDVS_Driver::callback, this, _1);
