@@ -190,8 +190,9 @@ namespace Edvs
 
 	/** An eDVS event */
 	struct Event {
-		unsigned int x, y;
-		bool parity;
+		uint8_t x, y;
+		bool polarity;
+		uint32_t time_delta; // in us
 	};
 
 	/** Type of event callback function */
@@ -205,7 +206,7 @@ namespace Edvs
 			EventCapture() {
 			}
 			EventCapture(Device device, EventCallbackType f, size_t buffer_size=cDefaultBufferSize)
-			: device_(device), event_callback_(f), buffer_size_(buffer_size), running_(false) {
+			: device_(device), event_callback_(f), buffer_size_(buffer_size), running_(false), lastByteInBufferHadMsbSet(true) {
 				StartEventCapture();
 			}
 			~EventCapture() {
@@ -216,7 +217,7 @@ namespace Edvs
 				if(running_) {
 					throw "Already running!";
 				}
-				device_.WriteCommand("!E0\n");
+				device_.WriteCommand("!E1\n");
 				device_.WriteCommand("E+\n");
 				running_ = true;
 				thread_ = boost::thread(&Edvs::Impl::EventCapture::Run, this);
@@ -245,23 +246,48 @@ namespace Edvs
 						bytes_read = device_.ReadBinaryData(buffer_size_, (char*)buffer);
 					}
 					buffA->clear();
-					for(size_t i=0; i<bytes_read; i+=2) {
-						// get to bytes
-						unsigned char a = buffer[i];
-						unsigned char b = buffer[i + 1];
-						// check for and parse 0yyyyyyy pxxxxxxx
-						if(!(a & cHighBitMask)) { // check that the high bit o first byte is 1
-							// the serial port missed a byte somewhere ...
-							// skip one byte to jump to the next event
-							i ++;
+
+					size_t buffer_offset = 0;
+					while(buffer_offset < bytes_read) {
+
+						// Skip bytes until we have the second of two "MSB-positive" bytes in a row
+						if (! lastByteInBufferHadMsbSet) {
+							lastByteInBufferHadMsbSet = buffer[buffer_offset++] & 0x80;
 							continue;
 						}
+
+						uint8_t a = buffer[buffer_offset++];
+						uint8_t b = buffer[buffer_offset++];
+						uint8_t c = buffer[buffer_offset++];
+						uint8_t d = 0x00;
+						uint8_t e = 0x00;
+						uint8_t f = 0x00;
+
+						// build the time value
+						uint32_t t = c & 0x7F;
+						if( ! (c & 0x80) ) { // if byte C's MSB is not set, timestamp is at least one more byte
+							d = buffer[buffer_offset++];
+							t = (t<<7) & (d & 0x7F);
+							if( ! (d & 0x80) ) { // if byte D's MSB is not set, timestamp is at least one more byte
+								e = buffer[buffer_offset++];
+								t = (t<<7) & (e & 0x7F);
+								if( ! (e & 0x80) ) { // if byte E's MSB is not set, timestamp is one more byte
+									f = buffer[buffer_offset++];
+									t = (t<<7) & (f & 0x7F);
+									if( ! (f & 0x80) ) { // if byte F's MSB is not set, we have a problem.
+										lastByteInBufferHadMsbSet = false;
+										continue; // we will skip bytes until have two consecutive ones whose MSB is set
+									}
+								}
+							}
+						}
+
 						// create event
-						Event e;
-						e.x = (unsigned int)(b & cLowerBitsMask);
-						e.y = (unsigned int)(a & cLowerBitsMask);
-						e.parity = (b & cHighBitMask); // converts to bool
-						buffA->push_back(e);
+						uint8_t x = b & 0x7F;
+						uint8_t y = a & 0x7F;
+						bool pol = b & 0x80;
+
+						buffA->push_back( Event{x,y,pol,t} );
 					}
 #ifdef VERBOSE
 					//std::cout << events.size();
@@ -283,6 +309,7 @@ namespace Edvs
 			EventCallbackType event_callback_;
 			size_t buffer_size_;
 			bool running_;
+			bool lastByteInBufferHadMsbSet;
 			boost::thread thread_;
 		};
 	}
@@ -301,7 +328,7 @@ namespace Edvs
 }
 
 inline std::ostream& operator<<(std::ostream& os, const Edvs::Event& e) {
-	os << "(" << e.parity << ": " << e.x << ", " << e.y << ")";
+	os << "(" << e.polarity << ": " << e.x << ", " << e.y << ")";
 	return os;
 }
 

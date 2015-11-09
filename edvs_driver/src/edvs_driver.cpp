@@ -82,8 +82,8 @@ void EDVS_Driver::callback(const std::vector<Edvs::Event>& events) {
   	Event e;
   	e.x=i->x;
   	e.y=i->y;
-  	e.polarity=i->parity;
-  	e.timestamp=0;
+  	e.polarity=i->polarity;
+  	e.timestamp=i->time_delta;
   	event_buffer.push_back(e);
   	std::cout << "Event: <x, y, t, p> = <" << e.x << ", " << e.y << ", " << e.timestamp << ", " << e.polarity << ">" << std::endl;
   }
