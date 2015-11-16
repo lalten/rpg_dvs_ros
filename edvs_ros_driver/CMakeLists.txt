@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 generate_dynamic_reconfigure_options(
-  cfg/DVS_ROS_Driver.cfg
+  cfg/EDVS_ROS_Driver.cfg
 )
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")

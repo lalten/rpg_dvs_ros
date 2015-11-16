@@ -18,16 +18,16 @@
 #include <pluginlib/class_list_macros.h>
 
 
-namespace dvs_ros_driver
+namespace edvs_ros_driver
 {
 
 void DvsRosDriverNodelet::onInit()
 {
-  driver_ = new dvs_ros_driver::DvsRosDriver(getNodeHandle(), getPrivateNodeHandle());
+  driver_ = new edvs_ros_driver::EdvsRosDriver(getNodeHandle(), getPrivateNodeHandle());
 
   NODELET_INFO_STREAM("Initialized " <<  getName() << " nodelet.");
 }
 
-PLUGINLIB_DECLARE_CLASS(dvs_ros_driver, DvsRosDriverNodelet, dvs_ros_driver::DvsRosDriverNodelet, nodelet::Nodelet);
+PLUGINLIB_DECLARE_CLASS(edvs_ros_driver, DvsRosDriverNodelet, edvs_ros_driver::DvsRosDriverNodelet, nodelet::Nodelet);
 
 }

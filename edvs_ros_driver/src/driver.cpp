@@ -15,9 +15,9 @@
 
 #include "../include/edvs_ros_driver/driver.h"
 
-namespace dvs_ros_driver {
+namespace edvs_ros_driver {
 
-DvsRosDriver::DvsRosDriver(ros::NodeHandle & nh, ros::NodeHandle nh_private) :
+EdvsRosDriver::EdvsRosDriver(ros::NodeHandle & nh, ros::NodeHandle nh_private) :
     nh_(nh), parameter_update_required_(false)
 {
   // load parameters
@@ -75,25 +75,25 @@ DvsRosDriver::DvsRosDriver(ros::NodeHandle & nh, ros::NodeHandle nh_private) :
 
   // spawn threads
   running_ = true;
-  parameter_thread_ = boost::shared_ptr< boost::thread >(new boost::thread(boost::bind(&DvsRosDriver::changeDvsParameters, this)));
-  readout_thread_ = boost::shared_ptr< boost::thread >(new boost::thread(boost::bind(&DvsRosDriver::readout, this)));
+  parameter_thread_ = boost::shared_ptr< boost::thread >(new boost::thread(boost::bind(&EdvsRosDriver::changeDvsParameters, this)));
+  readout_thread_ = boost::shared_ptr< boost::thread >(new boost::thread(boost::bind(&EdvsRosDriver::readout, this)));
 
-  reset_sub_ = nh_.subscribe((ns + "/reset_timestamps").c_str(), 1, &DvsRosDriver::resetTimestampsCallback, this);
+  reset_sub_ = nh_.subscribe((ns + "/reset_timestamps").c_str(), 1, &EdvsRosDriver::resetTimestampsCallback, this);
 
   // Dynamic reconfigure
-  dynamic_reconfigure_callback_ = boost::bind(&DvsRosDriver::callback, this, _1, _2);
-  server_.reset(new dynamic_reconfigure::Server<dvs_ros_driver::DVS_ROS_DriverConfig>(nh_private));
+  dynamic_reconfigure_callback_ = boost::bind(&EdvsRosDriver::callback, this, _1, _2);
+  server_.reset(new dynamic_reconfigure::Server<edvs_ros_driver::EDVS_ROS_DriverConfig>(nh_private));
   server_->setCallback(dynamic_reconfigure_callback_);
 
   // start timer to reset timestamps for synchronization
   if (reset_timestamps_delay > 0.0)
   {
-    timestamp_reset_timer_ = nh_.createTimer(ros::Duration(reset_timestamps_delay), &DvsRosDriver::resetTimerCallback, this);
+    timestamp_reset_timer_ = nh_.createTimer(ros::Duration(reset_timestamps_delay), &EdvsRosDriver::resetTimerCallback, this);
     ROS_INFO("Started timer to reset timestamps on master DVS for synchronization (delay=%3.2fs).", reset_timestamps_delay);
   }
 }
 
-DvsRosDriver::~DvsRosDriver()
+EdvsRosDriver::~EdvsRosDriver()
 {
   if (running_)
   {
@@ -105,24 +105,24 @@ DvsRosDriver::~DvsRosDriver()
   }
 }
 
-void DvsRosDriver::resetTimestamps()
+void EdvsRosDriver::resetTimestamps()
 {
   ROS_INFO("Reset timestamps on %s", device_id_.c_str());
   driver_->resetTimestamps();
 }
 
-void DvsRosDriver::resetTimestampsCallback(std_msgs::Empty msg)
+void EdvsRosDriver::resetTimestampsCallback(std_msgs::Empty msg)
 {
   resetTimestamps();
 }
 
-void DvsRosDriver::resetTimerCallback(const ros::TimerEvent& te)
+void EdvsRosDriver::resetTimerCallback(const ros::TimerEvent& te)
 {
   resetTimestamps();
   timestamp_reset_timer_.stop();
 }
 
-void DvsRosDriver::changeDvsParameters()
+void EdvsRosDriver::changeDvsParameters()
 {
   while(running_)
   {
@@ -145,7 +145,7 @@ void DvsRosDriver::changeDvsParameters()
   }
 }
 
-void DvsRosDriver::callback(dvs_ros_driver::DVS_ROS_DriverConfig &config, uint32_t level)
+void EdvsRosDriver::callback(edvs_ros_driver::EDVS_ROS_DriverConfig &config, uint32_t level)
 {
   // did any DVS bias setting change?
    if (current_config_.cas != config.cas || current_config_.injGnd != config.injGnd ||
@@ -181,7 +181,7 @@ void DvsRosDriver::callback(dvs_ros_driver::DVS_ROS_DriverConfig &config, uint32
    }
 }
 
-void DvsRosDriver::readout()
+void EdvsRosDriver::readout()
 {
   //std::vector<dvs::Event> events;
 

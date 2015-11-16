@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
   ros::NodeHandle nh;
   ros::NodeHandle nh_private("~");
 
-  dvs_ros_driver::DvsRosDriver* driver = new dvs_ros_driver::DvsRosDriver(nh, nh_private);
+  edvs_ros_driver::EdvsRosDriver* driver = new edvs_ros_driver::EdvsRosDriver(nh, nh_private);
 
   ros::spin();
   return 0;

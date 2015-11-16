@@ -32,22 +32,22 @@
 
 // dynamic reconfigure
 #include <dynamic_reconfigure/server.h>
-#include <edvs_ros_driver/DVS_ROS_DriverConfig.h>
+#include <edvs_ros_driver/EDVS_ROS_DriverConfig.h>
 
 // camera info manager
 #include <sensor_msgs/CameraInfo.h>
 #include <camera_info_manager/camera_info_manager.h>
 
-namespace dvs_ros_driver {
+namespace edvs_ros_driver {
 
-class DvsRosDriver {
+class EdvsRosDriver {
 public:
-  DvsRosDriver(ros::NodeHandle & nh, ros::NodeHandle nh_private);
-  ~DvsRosDriver();
+  EdvsRosDriver(ros::NodeHandle & nh, ros::NodeHandle nh_private);
+  ~EdvsRosDriver();
 
 private:
   void changeDvsParameters();
-  void callback(dvs_ros_driver::DVS_ROS_DriverConfig &config, uint32_t level);
+  void callback(edvs_ros_driver::EDVS_ROS_DriverConfig &config, uint32_t level);
   void readout();
   void resetTimestamps();
 
@@ -58,8 +58,8 @@ private:
 
   volatile bool running_;
 
-  boost::shared_ptr<dynamic_reconfigure::Server<dvs_ros_driver::DVS_ROS_DriverConfig> > server_;
-  dynamic_reconfigure::Server<dvs_ros_driver::DVS_ROS_DriverConfig>::CallbackType dynamic_reconfigure_callback_;
+  boost::shared_ptr<dynamic_reconfigure::Server<edvs_ros_driver::EDVS_ROS_DriverConfig> > server_;
+  dynamic_reconfigure::Server<edvs_ros_driver::EDVS_ROS_DriverConfig>::CallbackType dynamic_reconfigure_callback_;
 
   ros::Subscriber reset_sub_;
   void resetTimestampsCallback(std_msgs::Empty msg);
@@ -69,7 +69,7 @@ private:
 
   boost::posix_time::time_duration delta_;
 
-  dvs_ros_driver::DVS_ROS_DriverConfig current_config_;
+  edvs_ros_driver::EDVS_ROS_DriverConfig current_config_;
   camera_info_manager::CameraInfoManager* camera_info_manager_;
 
   std::string device_id_;

@@ -19,14 +19,14 @@
 
 #include "../edvs_ros_driver/driver.h"
 
-namespace dvs_ros_driver {
+namespace edvs_ros_driver {
 
 class DvsRosDriverNodelet : public nodelet::Nodelet {
 public:
   virtual void onInit();
 
 private:
-  dvs_ros_driver::DvsRosDriver* driver_;
+  edvs_ros_driver::EdvsRosDriver* driver_;
 };
 
 }
