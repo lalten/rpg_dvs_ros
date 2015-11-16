@@ -28,8 +28,6 @@
 #include <std_msgs/Empty.h>
 
 // DVS driver
-#include <libcaer/libcaer.h>
-#include <libcaer/devices/dvs128.h>
 #include <edvs_driver/edvs_driver.h>
 
 // dynamic reconfigure
@@ -56,7 +54,6 @@ private:
   ros::NodeHandle nh_;
   ros::Publisher event_array_pub_;
   ros::Publisher camera_info_pub_;
-  caerDeviceHandle dvs128_handle;
   dvs::EDVS_Driver *driver_;
 
   volatile bool running_;
@@ -75,7 +72,6 @@ private:
   dvs_ros_driver::DVS_ROS_DriverConfig current_config_;
   camera_info_manager::CameraInfoManager* camera_info_manager_;
 
-  struct caer_dvs128_info dvs128_info_;
   std::string device_id_;
 
   ros::Time reset_time_;
