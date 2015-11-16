@@ -267,13 +267,13 @@ namespace Edvs
 						uint32_t t = c & 0x7F;
 						if( ! (c & 0x80) ) { // if byte C's MSB is not set, timestamp is at least one more byte
 							d = buffer[buffer_offset++];
-							t = (t<<7) & (d & 0x7F);
+							t = (t<<7) | (d & 0x7F);
 							if( ! (d & 0x80) ) { // if byte D's MSB is not set, timestamp is at least one more byte
 								e = buffer[buffer_offset++];
-								t = (t<<7) & (e & 0x7F);
+								t = (t<<7) | (e & 0x7F);
 								if( ! (e & 0x80) ) { // if byte E's MSB is not set, timestamp is one more byte
 									f = buffer[buffer_offset++];
-									t = (t<<7) & (f & 0x7F);
+									t = (t<<7) | (f & 0x7F);
 									if( ! (f & 0x80) ) { // if byte F's MSB is not set, we have a problem.
 										lastByteInBufferHadMsbSet = false;
 										continue; // we will skip bytes until have two consecutive ones whose MSB is set
