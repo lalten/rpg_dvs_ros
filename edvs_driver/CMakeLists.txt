@@ -7,7 +7,7 @@ set(CMAKE_BUILD_TYPE Debug)
 # search for everything we need to build the package
 find_package(catkin)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") # -O3")
 
 # since we need eigen and boost search them as well
 find_package(Boost REQUIRED COMPONENTS thread)
