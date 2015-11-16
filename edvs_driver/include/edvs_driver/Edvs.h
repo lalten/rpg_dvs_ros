@@ -83,6 +83,7 @@ int main(int argc, char* argv[])
 #include <termios.h>
 
 //#define VERBOSE
+#define RESET_ON_CLOSE
 
 namespace Edvs
 {
