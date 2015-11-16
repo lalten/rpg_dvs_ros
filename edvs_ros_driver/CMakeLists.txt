@@ -51,51 +51,51 @@ include_directories(
 )
 
 # make the executable
-add_executable(dvs_ros_driver
+add_executable(edvs_ros_driver
   src/driver_node.cpp
   src/driver.cpp
 )
 
 # make the nodelet into a library
-add_library(dvs_ros_driver_nodelet 
+add_library(edvs_ros_driver_nodelet 
   src/driver_nodelet.cpp
   src/driver.cpp
 )
 
 # to build the executable we depend on other packets, 
 # they need to be build beforehand, especially the messages
-add_dependencies(dvs_ros_driver 
+add_dependencies(edvs_ros_driver 
   ${catkin_EXPORTED_TARGETS} 
   ${PROJECT_NAME}_gencf
 )
 
-add_dependencies(dvs_ros_driver_nodelet 
+add_dependencies(edvs_ros_driver_nodelet 
   ${catkin_EXPORTED_TARGETS} 
   ${PROJECT_NAME}_gencf
 )
 
 # link the executable to the necesarry libs
-target_link_libraries(dvs_ros_driver
+target_link_libraries(edvs_ros_driver
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
   ${CATKIN_DEVEL_PREFIX}/lib/libcaer${CMAKE_SHARED_LIBRARY_SUFFIX}
 )
 
 # link the executable to the necesarry libs
-target_link_libraries(dvs_ros_driver_nodelet
+target_link_libraries(edvs_ros_driver_nodelet
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
   ${CATKIN_DEVEL_PREFIX}/lib/libcaer${CMAKE_SHARED_LIBRARY_SUFFIX}
 )
 
 # Install the nodelet library
-install(TARGETS dvs_ros_driver_nodelet
+install(TARGETS edvs_ros_driver_nodelet
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 # Install other support files for installation
-install(FILES dvs_ros_driver_nodelet.xml
+install(FILES edvs_ros_driver_nodelet.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
