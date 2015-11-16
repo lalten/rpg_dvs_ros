@@ -16,7 +16,6 @@
 #pragma once
 
 #include <ros/ros.h>
-#include <string>
 
 // boost
 #include <boost/thread.hpp>
@@ -31,10 +30,11 @@
 // DVS driver
 #include <libcaer/libcaer.h>
 #include <libcaer/devices/dvs128.h>
+#include <edvs_driver/edvs_driver.h>
 
 // dynamic reconfigure
 #include <dynamic_reconfigure/server.h>
-#include <dvs_ros_driver/DVS_ROS_DriverConfig.h>
+#include <edvs_ros_driver/DVS_ROS_DriverConfig.h>
 
 // camera info manager
 #include <sensor_msgs/CameraInfo.h>
@@ -57,6 +57,7 @@ private:
   ros::Publisher event_array_pub_;
   ros::Publisher camera_info_pub_;
   caerDeviceHandle dvs128_handle;
+  dvs::EDVS_Driver *driver_;
 
   volatile bool running_;
 

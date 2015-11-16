@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(dvs_ros_driver)
+project(edvs_ros_driver)
+
+set(ROS_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug)
 
 # search for everything we need to build the package
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   libcaer_catkin
+  edvs_driver
   dvs_msgs
   std_msgs
   dynamic_reconfigure
@@ -28,7 +32,8 @@ catkin_package(
   	include
   CATKIN_DEPENDS 
   	roscpp 
-    libcaer_catkin
+  	libcaer_catkin
+  	edvs_driver
   	dvs_msgs 
   	std_msgs
   	dynamic_reconfigure

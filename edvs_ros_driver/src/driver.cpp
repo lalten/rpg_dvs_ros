@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with DVS-ROS.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "dvs_ros_driver/driver.h"
+#include "../include/edvs_ros_driver/driver.h"
 
 namespace dvs_ros_driver {
 
@@ -29,17 +29,19 @@ DvsRosDriver::DvsRosDriver(ros::NodeHandle & nh, ros::NodeHandle nh_private) :
   nh_private.param<double>("reset_timestamps_delay", reset_timestamps_delay, -1.0);
 
   // start driver
+
   bool dvs_running = false;
   while (!dvs_running)
   {
-    //driver_ = new dvs::DvsDriver(dvs_serial_number, master);
-    dvs128_handle = caerDeviceOpen(1, CAER_DEVICE_DVS128, 0, 0, NULL);
+    driver_ = new dvs::EDVS_Driver(dvs_serial_number, master);
+//    dvs128_handle = caerDeviceOpen(1, CAER_DEVICE_DVS128, 0, 0, NULL);
 
-    //dvs_running = driver_->isDeviceRunning();
-    dvs_running = !(dvs128_handle == NULL);
+    dvs_running = driver_->isDeviceRunning();
+//    dvs_running = !(dvs128_handle == NULL);
 
     if (!dvs_running)
     {
+	  delete driver_;
       ROS_WARN("Could not find DVS. Will retry every second.");
       ros::Duration(1.0).sleep();
       ros::spinOnce();
@@ -51,12 +53,14 @@ DvsRosDriver::DvsRosDriver(ros::NodeHandle & nh, ros::NodeHandle nh_private) :
     }
   }
 
-  dvs128_info_ = caerDVS128InfoGet(dvs128_handle);
-  device_id_ = "DVS128-V1-" + std::string(dvs128_info_.deviceString).substr(15, 4);
+//  dvs128_info_ = caerDVS128InfoGet(dvs128_handle);
+//  device_id_ = "DVS128-V1-" + std::string(dvs128_info_.deviceString).substr(15, 4);
+  device_id_ = "eDVS128-" + driver_->get_camera_id();
 
-  ROS_INFO("%s --- ID: %d, Master: %d, DVS X: %d, DVS Y: %d, Logic: %d.\n", dvs128_info_.deviceString,
-           dvs128_info_.deviceID, dvs128_info_.deviceIsMaster, dvs128_info_.dvsSizeX, dvs128_info_.dvsSizeY,
-           dvs128_info_.logicVersion);
+//  ROS_INFO("%s --- ID: %d, Master: %d, DVS X: %d, DVS Y: %d, Logic: %d.\n", dvs128_info_.deviceString,
+//           dvs128_info_.deviceID, dvs128_info_.deviceIsMaster, dvs128_info_.dvsSizeX, dvs128_info_.dvsSizeY,
+//           dvs128_info_.logicVersion);
+  ROS_INFO("%s (Master: %d)\n", device_id_.c_str(), master);
 
   current_config_.streaming_rate = 30;
   delta_ = boost::posix_time::microseconds(1e6/current_config_.streaming_rate);
@@ -113,7 +117,8 @@ DvsRosDriver::~DvsRosDriver()
 void DvsRosDriver::resetTimestamps()
 {
   ROS_INFO("Reset timestamps on %s", device_id_.c_str());
-  caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_TIMESTAMP_RESET, 1);
+//  caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_DVS, DVS128_CONFIG_DVS_TIMESTAMP_RESET, 1);
+  driver_->resetTimestamps();
 }
 
 void DvsRosDriver::resetTimestampsCallback(std_msgs::Empty msg)
@@ -136,18 +141,21 @@ void DvsRosDriver::changeDvsParameters()
       if (parameter_update_required_)
       {
         parameter_update_required_ = false;
-        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_CAS, current_config_.cas);
-        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_INJGND, current_config_.injGnd);
-        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_REQPD, current_config_.reqPd);
-        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_PUX, current_config_.puX);
-        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_DIFFOFF, current_config_.diffOff);
-        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_REQ, current_config_.req);
-        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_REFR, current_config_.refr);
-        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_PUY, current_config_.puY);
-        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_DIFFON, current_config_.diffOn);
-        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_DIFF, current_config_.diff);
-        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_FOLL, current_config_.foll);
-        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_PR, current_config_.Pr);
+//        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_CAS, current_config_.cas);
+//        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_INJGND, current_config_.injGnd);
+//        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_REQPD, current_config_.reqPd);
+//        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_PUX, current_config_.puX);
+//        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_DIFFOFF, current_config_.diffOff);
+//        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_REQ, current_config_.req);
+//        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_REFR, current_config_.refr);
+//        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_PUY, current_config_.puY);
+//        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_DIFFON, current_config_.diffOn);
+//        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_DIFF, current_config_.diff);
+//        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_FOLL, current_config_.foll);
+//        caerDeviceConfigSet(dvs128_handle, DVS128_CONFIG_BIAS, DVS128_CONFIG_BIAS_PR, current_config_.Pr);
+        driver_->change_parameters(current_config_.cas, current_config_.injGnd, current_config_.reqPd, current_config_.puX,
+        		current_config_.diffOff, current_config_.req, current_config_.refr, current_config_.puY,
+				current_config_.diffOn, current_config_.diff, current_config_.foll, current_config_.Pr);
       }
 
       boost::this_thread::sleep(boost::posix_time::milliseconds(100));
@@ -199,52 +207,61 @@ void DvsRosDriver::readout()
 {
   //std::vector<dvs::Event> events;
 
-  caerDeviceDataStart(dvs128_handle, NULL, NULL, NULL, NULL, NULL);
-  caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_DATAEXCHANGE, CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING, true);
+//  caerDeviceDataStart(dvs128_handle, NULL, NULL, NULL, NULL, NULL);
+//  caerDeviceConfigSet(dvs128_handle, CAER_HOST_CONFIG_DATAEXCHANGE, CAER_HOST_CONFIG_DATAEXCHANGE_BLOCKING, true);
 
   boost::posix_time::ptime next_send_time = boost::posix_time::microsec_clock::local_time();
 
   dvs_msgs::EventArrayPtr event_array_msg(new dvs_msgs::EventArray());
-  event_array_msg->height = dvs128_info_.dvsSizeY;
-  event_array_msg->width = dvs128_info_.dvsSizeX;
+  event_array_msg->height = 128; //dvs128_info_.dvsSizeY;
+  event_array_msg->width = 128; //dvs128_info_.dvsSizeX;
 
   while (running_)
   {
     try
     {
-      caerEventPacketContainer packetContainer = caerDeviceDataGet(dvs128_handle);
-      if (packetContainer == NULL)
-      {
-        continue; // Skip if nothing there.
-      }
+//      caerEventPacketContainer packetContainer = caerDeviceDataGet(dvs128_handle);
+    	std::vector<dvs::Event> events = driver_->get_events();
 
-      int32_t packetNum = caerEventPacketContainerGetEventPacketsNumber(packetContainer);
-
-      for (int32_t i = 0; i < packetNum; i++)
-      {
-        caerEventPacketHeader packetHeader = caerEventPacketContainerGetEventPacket(packetContainer, i);
-        if (packetHeader == NULL)
-        {
-          continue; // Skip if nothing there.
-        }
-
-        // Packet 0 is always the special events packet for DVS128, while packet is the polarity events packet.
-        if (i == POLARITY_EVENT)
-        {
-          caerPolarityEventPacket polarity = (caerPolarityEventPacket) packetHeader;
-
-          const int numEvents = caerEventPacketHeaderGetEventNumber(packetHeader);
-
-          for (int j = 0; j < numEvents; j++)
+//      if (packetContainer == NULL)
+//      {
+//        continue; // Skip if nothing there.
+//      }
+//
+//      int32_t packetNum = caerEventPacketContainerGetEventPacketsNumber(packetContainer);
+//
+//        for (int32_t i = 0; i < packetNum; i++)
+//      {
+//        caerEventPacketHeader packetHeader = caerEventPacketContainerGetEventPacket(packetContainer, i);
+//        if (packetHeader == NULL)
+//        {
+//          continue; // Skip if nothing there.
+//        }
+//
+//        // Packet 0 is always the special events packet for DVS128, while packet is the polarity events packet.
+//        if (i == POLARITY_EVENT)
+//        {
+//          caerPolarityEventPacket polarity = (caerPolarityEventPacket) packetHeader;
+//
+//          const int numEvents = caerEventPacketHeaderGetEventNumber(packetHeader);
+//
+//        for (int j = 0; j < numEvents; j++)
+    	  for (dvs::Event ee : events)
           {
             // Get full timestamp and addresses of first event.
-            caerPolarityEvent event = caerPolarityEventPacketGetEvent(polarity, j);
+//            caerPolarityEvent event = caerPolarityEventPacketGetEvent(polarity, j);
+
+//            dvs_msgs::Event e;
+//            e.x = caerPolarityEventGetX(event);
+//            e.y = 127 - caerPolarityEventGetY(event);
+//            e.ts = reset_time_ + ros::Duration(caerPolarityEventGetTimestamp64(event, polarity) / 1.e6);
+//            e.polarity = caerPolarityEventGetPolarity(event);
 
             dvs_msgs::Event e;
-            e.x = caerPolarityEventGetX(event);
-            e.y = 127 - caerPolarityEventGetY(event);
-            e.ts = reset_time_ + ros::Duration(caerPolarityEventGetTimestamp64(event, polarity) / 1.e6);
-            e.polarity = caerPolarityEventGetPolarity(event);
+            e.x = ee.x;
+            e.y = ee.y;
+            e.ts = reset_time_ + ros::Duration(ee.timestamp / 1.e6);
+            e.polarity = ee.polarity;
 
             event_array_msg->events.push_back(e);
           }
@@ -260,15 +277,15 @@ void DvsRosDriver::readout()
             }
           }
 
-          if (camera_info_manager_->isCalibrated())
-          {
-            sensor_msgs::CameraInfoPtr camera_info_msg(new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
-            camera_info_pub_.publish(camera_info_msg);
-          }
-        }
-      }
+//          if (camera_info_manager_->isCalibrated())
+//          {
+//            sensor_msgs::CameraInfoPtr camera_info_msg(new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
+//            camera_info_pub_.publish(camera_info_msg);
+//          }
+//      } // POLARITY_EVENT
+//    } // for packetNum
 
-      caerEventPacketContainerFree(packetContainer);
+//    caerEventPacketContainerFree(packetContainer);
 
       ros::spinOnce();
     }
@@ -278,7 +295,7 @@ void DvsRosDriver::readout()
     }
   }
 
-  caerDeviceDataStop(dvs128_handle);
+//  caerDeviceDataStop(dvs128_handle);
 }
 
 } // namespace
