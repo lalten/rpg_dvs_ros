@@ -105,8 +105,7 @@ namespace Edvs
 				: std::runtime_error(msg) {}
 			};
 			/** Opens the serial port */
-			SerialPort(Baudrate br=B921k) {
-				const char* port = "/dev/ttyUSB0";
+			SerialPort(Baudrate br = B921k, const char* port = "/dev/ttyUSB0") {
 			#ifdef VERBOSE
 				std::cout << "Edvs: Openening port " << port << " with baud rate " << br << std::endl;
 			#endif
@@ -175,9 +174,12 @@ namespace Edvs
 	struct Device
 	{
 		Device() {}
-		Device(Baudrate br)
-		: device_(new Impl::SerialPort(br)) {
-		}
+    Device(Baudrate br)
+    : device_(new Impl::SerialPort(br)) {
+    }
+    Device(Baudrate br, std::string Port)
+    : device_(new Impl::SerialPort(br, Port.c_str())) {
+    }
 		void WriteCommand(const std::string& str) {
 			device_->WriteCommand(str);
 		}

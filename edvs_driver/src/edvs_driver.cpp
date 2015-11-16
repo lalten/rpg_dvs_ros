@@ -24,7 +24,7 @@
 
 namespace dvs {
 
-EDVS_Driver::EDVS_Driver(std::string dvs_serial_number, bool master) {
+EDVS_Driver::EDVS_Driver(std::string edvs_port, bool master) {
   // initialize parameters (min, max, value)
   parameters.insert(std::pair<std::string, Parameter>("cas", Parameter(0, 16777215, 54)));
   parameters.insert(std::pair<std::string, Parameter>("injGnd", Parameter(0, 16777215, 1108364)));
@@ -45,23 +45,23 @@ EDVS_Driver::EDVS_Driver(std::string dvs_serial_number, bool master) {
 
   device_mutex.lock();
   try {
-	  device = new Edvs::Device(Edvs::B4000k);
+	  device = new Edvs::Device(Edvs::B4000k, edvs_port);
 	  capture = new Edvs::EventCapture(*device, cbf);
   } catch (std::runtime_error &ex) {
 	  std::cerr << ex.what() <<std::endl;
   }
   device_mutex.unlock();
 
-  camera_id = dvs_serial_number;
+  camera_id = edvs_port;
 
 
   // put into slave mode?
-  if (!master) {
-    std::cout << "Setting camera (" << camera_id << ") as slave!" << std::endl;
-    device_mutex.lock();
-    device->WriteCommand("!ETS");
-    device_mutex.unlock();
-  }
+//  if (!master) {
+//    std::cout << "Setting camera (" << camera_id << ") as slave!" << std::endl;
+//    device_mutex.lock();
+//    device->WriteCommand("!ETS");
+//    device_mutex.unlock();
+//  }
   // TODO: do we need to set master mode as well? are settings volatile?
 
 }
@@ -81,7 +81,7 @@ void EDVS_Driver::callback(const std::vector<Edvs::Event>& events) {
     integratedTimeSinceReset += i->time_delta;
     Event e {i->x, i->y, i->polarity, integratedTimeSinceReset};
   	event_buffer.push_back(e);
-  	std::cout << "Event: <x, y, t, p> = <" << e.x << ",\t" << e.y << ",\t" << e.timestamp << ",\t" << e.polarity << ">" << std::endl;
+  	//std::cout << "Event from "<<camera_id<<": <x, y, t, p> = <" << e.x << ",\t" << e.y << ",\t" << e.timestamp << ",\t" << e.polarity << ">" << std::endl;
   }
 
   event_buffer_mutex.unlock();
