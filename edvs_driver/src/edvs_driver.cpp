@@ -55,13 +55,18 @@ EDVS_Driver::EDVS_Driver(std::string edvs_port, bool master) {
   camera_id = edvs_port;
 
 
-  // put into slave mode?
-//  if (!master) {
-//    std::cout << "Setting camera (" << camera_id << ") as slave!" << std::endl;
-//    device_mutex.lock();
-//    device->WriteCommand("!ETS");
-//    device_mutex.unlock();
-//  }
+  // put into master or slave mode?
+  if (master) {
+    std::cout << "Setting camera (" << camera_id << ") as master." << std::endl;
+    device_mutex.lock();
+    device->WriteCommand("!ETM+");
+    device_mutex.unlock();
+  } else {
+    std::cout << "Setting camera (" << camera_id << ") as slave." << std::endl;
+    device_mutex.lock();
+    device->WriteCommand("!ETS");
+    device_mutex.unlock();
+  }
   // TODO: do we need to set master mode as well? are settings volatile?
 
 }
