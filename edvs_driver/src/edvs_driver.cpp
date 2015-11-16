@@ -45,7 +45,11 @@ EDVS_Driver::EDVS_Driver(std::string edvs_port, bool master) {
 
   device_mutex.lock();
   try {
-	  device = new Edvs::Device(Edvs::B4000k, edvs_port);
+    if(edvs_port!="") {
+      device = new Edvs::Device(Edvs::B4000k, edvs_port);
+    } else {
+      device = new Edvs::Device(Edvs::B4000k); // single camera mode, using default port
+    }
 	  capture = new Edvs::EventCapture(*device, cbf);
   } catch (std::runtime_error &ex) {
 	  std::cerr << ex.what() <<std::endl;
