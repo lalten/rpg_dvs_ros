@@ -51,9 +51,9 @@ private:
   static const int sensor_width = 128;
   static const int sensor_height = 128;
 
-  int last_off_map_[sensor_width][sensor_height];
-  int last_on_map_[sensor_width][sensor_height];
-  int transition_sum_map_[sensor_width][sensor_height];
+  uint64_t last_off_map_[sensor_width][sensor_height];
+  uint64_t last_on_map_[sensor_width][sensor_height];
+  uint64_t transition_sum_map_[sensor_width][sensor_height];
 
   CalibrationParameters params_;
 
