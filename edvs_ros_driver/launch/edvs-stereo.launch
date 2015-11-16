@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>  
   <!-- camera driver -->
-  <node ns="edvs_left" name="edvs_ros_driver" pkg="edvs_ros_driver" type="edvs_ros_driver" output="screen">
+  <node ns="dvs_left" name="edvs_ros_driver" pkg="edvs_ros_driver" type="edvs_ros_driver" output="screen">
     <!-- Serial number is on the back of the DVS -->
     <param name="serial_number" type="str" value="/dev/serial/by-id/usb-FTDI_Dual_RS232-HS-if00-port0" />
 
@@ -15,7 +15,7 @@
     <rosparam command="load" file="$(find edvs_ros_driver)/config/fast.yaml" />
   </node>
   
-  <node ns="edvs_right" name="edvs_ros_driver" pkg="edvs_ros_driver" type="edvs_ros_driver" output="screen">
+  <node ns="dvs_right" name="edvs_ros_driver" pkg="edvs_ros_driver" type="edvs_ros_driver" output="screen">
   	<param name="serial_number" type="str" value="/dev/serial/by-id/usb-FTDI_Dual_RS232-HS-if01-port0" />
 
     <!-- Set as slave -->
@@ -23,4 +23,31 @@
   	 
     <rosparam command="load" file="$(find edvs_ros_driver)/config/fast.yaml" />
   </node>
+  
+
+  <!-- visualization -->
+  <node name="edvs_renderer_left" pkg="dvs_renderer" type="dvs_renderer">
+    <param name="display_method" value="red-blue"/>
+    <remap from="events" to="/dvs_left/events" />
+    <remap from="dvs_rendering" to="dvs_rendering_left" />
+  </node>
+  
+  <node name="edvs_renderer_right" pkg="dvs_renderer" type="dvs_renderer">
+    <param name="display_method" value="red-blue"/>
+    <remap from="events" to="/dvs_right/events" />
+    <remap from="dvs_rendering" to="dvs_rendering_right" />
+  </node>
+  
+
+
+  <!-- display -->
+  <node name="image_view_left" pkg="image_view" type="image_view">
+  	<remap from="image" to="dvs_rendering_left"/>
+  </node>
+  
+  <node name="image_view_right" pkg="image_view" type="image_view">
+  	<remap from="image" to="dvs_rendering_right"/>
+  </node>
+  
+
 </launch>
