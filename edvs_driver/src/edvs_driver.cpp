@@ -39,7 +39,7 @@ EDVS_Driver::EDVS_Driver(std::string dvs_serial_number, bool master) {
   parameters.insert(std::pair<std::string, Parameter>("foll", Parameter(0, 16777215, 51)));
   parameters.insert(std::pair<std::string, Parameter>("Pr", Parameter(0, 16777215, 3)));
 
-  lastTimestamp = 0;
+  integratedTimeSinceReset = 0;
 
   Edvs::EventCallbackType cbf = boost::bind(&EDVS_Driver::callback, this, _1);
 
@@ -78,12 +78,8 @@ void EDVS_Driver::callback(const std::vector<Edvs::Event>& events) {
   event_buffer_mutex.lock();
 
   for (std::vector<Edvs::Event>::const_iterator i=events.begin(); i<events.end(); ++i) {
-  	// TODO: where do we get the timestamp from?
-  	Event e;
-  	e.x=i->x;
-  	e.y=i->y;
-  	e.polarity=i->polarity;
-  	e.timestamp=i->time_delta;
+    integratedTimeSinceReset += i->time_delta;
+    Event e {i->x, i->y, i->polarity, integratedTimeSinceReset};
   	event_buffer.push_back(e);
   	std::cout << "Event: <x, y, t, p> = <" << e.x << ",\t" << e.y << ",\t" << e.timestamp << ",\t" << e.polarity << ">" << std::endl;
   }
@@ -100,6 +96,10 @@ std::vector<Event> EDVS_Driver::get_events() {
 }
 
 void EDVS_Driver::resetTimestamps() {
+  event_buffer_mutex.lock();
+  integratedTimeSinceReset = 0;
+  event_buffer_mutex.unlock();
+
   device_mutex.lock();
   device->WriteCommand("!ET0\n");
   device_mutex.unlock();

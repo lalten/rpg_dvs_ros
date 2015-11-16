@@ -73,7 +73,7 @@ private:
   static const uint32_t bufferNumber = 8;
   static const uint32_t bufferSize = 4096;
 
-  uint64_t lastTimestamp;
+  uint64_t integratedTimeSinceReset; // sum of time_deltas in us
 
   class Parameter {
   public:
