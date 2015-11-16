@@ -7,7 +7,6 @@ set(CMAKE_BUILD_TYPE Debug)
 # search for everything we need to build the package
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  libcaer_catkin
   edvs_driver
   dvs_msgs
   std_msgs
@@ -32,7 +31,6 @@ catkin_package(
   	include
   CATKIN_DEPENDS 
   	roscpp 
-  	libcaer_catkin
   	edvs_driver
   	dvs_msgs 
   	std_msgs
@@ -78,14 +76,12 @@ add_dependencies(edvs_ros_driver_nodelet
 target_link_libraries(edvs_ros_driver
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
-  ${CATKIN_DEVEL_PREFIX}/lib/libcaer${CMAKE_SHARED_LIBRARY_SUFFIX}
 )
 
 # link the executable to the necesarry libs
 target_link_libraries(edvs_ros_driver_nodelet
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
-  ${CATKIN_DEVEL_PREFIX}/lib/libcaer${CMAKE_SHARED_LIBRARY_SUFFIX}
 )
 
 # Install the nodelet library
