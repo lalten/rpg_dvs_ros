@@ -219,6 +219,12 @@ void EdvsRosDriver::readout()
             }
           }
 
+          if (camera_info_manager_->isCalibrated())
+          {
+            sensor_msgs::CameraInfoPtr camera_info_msg(new sensor_msgs::CameraInfo(camera_info_manager_->getCameraInfo()));
+            camera_info_pub_.publish(camera_info_msg);
+          }
+
       ros::spinOnce();
     }
     catch (boost::thread_interrupted&)
