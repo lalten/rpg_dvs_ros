@@ -22,7 +22,6 @@
     <param name="blinking_time_tolerance_us" value="500" />
     <param name="enough_transitions_threshold" value="100" />
     <param name="minimum_transitions_threshold" value="30" />
-    <param name="minimum_transitions_threshold" value="30" />
 
     <param name="dots_w" value="5"/>
     <param name="dots_h" value="5"/>
