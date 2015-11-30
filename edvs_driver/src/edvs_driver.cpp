@@ -16,6 +16,7 @@
 #include "edvs_driver/edvs_driver.h"
 
 #include <stdexcept>
+#include <boost/algorithm/string/replace.hpp>
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -59,7 +60,8 @@ EDVS_Driver::EDVS_Driver(std::string edvs_port, bool master) {
   }
   device_mutex.unlock();
 
-  camera_id = edvs_port;
+  // eDVS camera don't have proper serial numbers, so for now we construct one from its port
+  camera_id = boost::replace_all_copy(edvs_port, "/", "_");
 
 
   // put into master or slave mode?
