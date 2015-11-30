@@ -50,8 +50,22 @@ void TransitionMap::update(const dvs_msgs::EventArray::ConstPtr& msg)
     else
     {
       int delta_t_us = (msg->events[i].ts.toNSec() - last_off_map_[msg->events[i].x][msg->events[i].y])/1e3;
-      if (delta_t_us < params_.blinking_time_us + params_.blinking_time_tolerance_us && delta_t_us > params_.blinking_time_us - params_.blinking_time_tolerance_us)
-        transition_sum_map_[msg->events[i].x][msg->events[i].y]++;
+      if (delta_t_us < params_.blinking_time_us + params_.blinking_time_tolerance_us && delta_t_us > params_.blinking_time_us - params_.blinking_time_tolerance_us) {
+        int x = msg->events[i].x;
+        int y = msg->events[i].y;
+
+        transition_sum_map_[x][y] += 1;
+
+        // Neighbors get some, too?
+        if(x > 0)              transition_sum_map_[x-1][y] += .5;
+        if(x < 127)            transition_sum_map_[x+1][y] += .5;
+        if(y > 0)              transition_sum_map_[x][y-1] += .5;
+        if(y < 127)            transition_sum_map_[x][y+1] += .5;
+        if(x > 0 && y > 0)     transition_sum_map_[x-1][y-1] += .354;
+        if(x < 127 && y > 0)   transition_sum_map_[x+1][y-1] += .354;
+        if(x < 127 && y < 127) transition_sum_map_[x+1][y+1] += .354;
+        if(x > 0 && y < 127)   transition_sum_map_[x-1][y+1] += .354;
+      }
     }
   }
 
@@ -62,11 +76,14 @@ cv::Mat TransitionMap::get_visualization_image()
   cv::Mat image = cv::Mat(sensor_height, sensor_width, CV_8UC3);
   image = cv::Scalar(255, 255, 255);
   int max_value = max();
+  max_value = log(max_value + 1);
   for (int i = 0; i < sensor_width; i++)
   {
     for (int j = 0; j < sensor_height; j++)
     {
-      int value = 255.0 - ((double)transition_sum_map_[i][j]) / ((double)max_value) * 255.0;
+      int value = 255.0 - (log((double)transition_sum_map_[i][j] + 1)) / ((double)max_value) * 255.0;
+      if(value > 255) value = 255;
+      if(value < 0) value = 0;
       image.at<cv::Vec3b>(j, i) = cv::Vec3b(value, value, value);
     }
   }

@@ -53,7 +53,7 @@ private:
 
   uint64_t last_off_map_[sensor_width][sensor_height];
   uint64_t last_on_map_[sensor_width][sensor_height];
-  uint64_t transition_sum_map_[sensor_width][sensor_height];
+  double transition_sum_map_[sensor_width][sensor_height];
 
   CalibrationParameters params_;
 
