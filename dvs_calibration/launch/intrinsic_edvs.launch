@@ -19,14 +19,16 @@
     <remap from="camera_info" to="/dvs/camera_info" />
     <remap from="set_camera_info" to="/dvs/set_camera_info" />
 
-    <param name="blinking_time_us" value="5000" />
-    <param name="blinking_time_tolerance_us" value="2000" />
+    <param name="blinking_time_us" value="1000" />
+    <param name="blinking_time_tolerance_us" value="200" />
     <param name="enough_transitions_threshold" value="50" />
     <param name="minimum_transitions_threshold" value="10" />
-
-    <param name="dots_w" value="2"/>
-    <param name="dots_h" value="2"/>
-    <param name="dot_distance" value="0.04"/>
+    <param name="minimum_led_mass" value = "1" />
+    <param name="pattern_search_timeout" value="1"/>
+    
+    <param name="dots_w" value="4"/>
+    <param name="dots_h" value="3"/>
+    <param name="dot_distance" value="0.12"/>
   </node>
 
   <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui" args="--perspective-file $(find dvs_calibration_gui)/rqt/IntrinsicCalibration.perspective" />
