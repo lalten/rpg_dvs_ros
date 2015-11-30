@@ -74,7 +74,6 @@ EDVS_Driver::EDVS_Driver(std::string edvs_port, bool master) {
     device->WriteCommand("!ETS");
     device_mutex.unlock();
   }
-  // TODO: do we need to set master mode as well? are settings volatile?
 
 }
 
@@ -152,32 +151,34 @@ bool EDVS_Driver::change_parameters(uint32_t cas, uint32_t injGnd, uint32_t reqP
 }
 
 bool EDVS_Driver::send_parameters() {
-  uint8_t biases[12 * 3];
-
   // see http://inilabs.com/support/edvs/#h.bctg2sgwitln
+  // Warning: Biases must only be set during Event mode (E+)! Otherwise the camera will freeze and require a power cycle.
+
   std::stringstream cmdstr;
   boost::format f("!B%d=%d\n");
 
+  cmdstr << "E+\n";
+
   int i=0;
 
-  cmdstr << f % i++ %  parameters["cas"].get_value();
-  cmdstr << f % i++ %  parameters["injGnd"].get_value();
-  cmdstr << f % i++ %  parameters["reqPd"].get_value();
-  cmdstr << f % i++ %  parameters["puX"].get_value();
-  cmdstr << f % i++ %  parameters["diffOff"].get_value();
-  cmdstr << f % i++ %  parameters["req"].get_value();
-  cmdstr << f % i++ %  parameters["refr"].get_value();
-  cmdstr << f % i++ %  parameters["puY"].get_value();
-  cmdstr << f % i++ %  parameters["diffOn"].get_value();
-  cmdstr << f % i++ %  parameters["diff"].get_value();
-  cmdstr << f % i++ %  parameters["foll"].get_value();
-  cmdstr << f % i++ %  parameters["Pr"].get_value();
+  cmdstr << f % i++ % parameters["cas"].get_value();
+  cmdstr << f % i++ % parameters["injGnd"].get_value();
+  cmdstr << f % i++ % parameters["reqPd"].get_value();
+  cmdstr << f % i++ % parameters["puX"].get_value();
+  cmdstr << f % i++ % parameters["diffOff"].get_value();
+  cmdstr << f % i++ % parameters["req"].get_value();
+  cmdstr << f % i++ % parameters["refr"].get_value();
+  cmdstr << f % i++ % parameters["puY"].get_value();
+  cmdstr << f % i++ % parameters["diffOn"].get_value();
+  cmdstr << f % i++ % parameters["diff"].get_value();
+  cmdstr << f % i++ % parameters["foll"].get_value();
+  cmdstr << f % i++ % parameters["Pr"].get_value();
 
   cmdstr << "!BF\n";
 
   device_mutex.lock();
   ROS_INFO("Sending: \"%s\"", cmdstr.str().c_str());
-//  device->WriteCommand(cmdstr.str());
+  device->WriteCommand(cmdstr.str());
   device_mutex.unlock();
 
   return true;
