@@ -66,12 +66,12 @@ EDVS_Driver::EDVS_Driver(std::string edvs_port, bool master) {
 
   // put into master or slave mode?
   if (master) {
-    std::cout << "Setting camera (" << camera_id << ") as master." << std::endl;
+    ROS_INFO("Setting camera (%s) as master.", camera_id.c_str());
     device_mutex.lock();
     device->WriteCommand("!ETM+");
     device_mutex.unlock();
   } else {
-    std::cout << "Setting camera (" << camera_id << ") as slave." << std::endl;
+    ROS_INFO("Setting camera (%s) as slave.", camera_id.c_str());
     device_mutex.lock();
     device->WriteCommand("!ETS");
     device_mutex.unlock();
@@ -179,7 +179,7 @@ bool EDVS_Driver::send_parameters() {
   cmdstr << "!BF\n";
 
   device_mutex.lock();
-  ROS_INFO("Sending: \"%s\"", cmdstr.str().c_str());
+  ROS_INFO("Sending to (%s): \"%s\"", camera_id.c_str(), cmdstr.str().c_str());
   device->WriteCommand(cmdstr.str());
   device_mutex.unlock();
 
