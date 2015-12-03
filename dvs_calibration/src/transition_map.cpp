@@ -111,7 +111,7 @@ void TransitionMap::init_transition_maps(const int width, const int height)
   transition_sum_map_.clear();
 
   std::vector<ros::Time> col_ts;
-  std::vector<int> col_sum;
+  std::vector<double> col_sum;
   for (int y=0; y<width; y++)
   {
     col_ts.push_back(ros::Time());
