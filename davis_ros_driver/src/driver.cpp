@@ -15,10 +15,22 @@
 
 #include "davis_ros_driver/driver.h"
 
+//DAVIS Bias types
+#define CF_N_TYPE(COARSE, FINE) (struct caer_bias_coarsefine) \
+        { .coarseValue = (uint8_t)(COARSE), .fineValue = (uint8_t)(FINE), \
+        .enabled = true, .sexN = true, \
+        .typeNormal = true, .currentLevelNormal = true }
+
+#define CF_P_TYPE(COARSE, FINE) (struct caer_bias_coarsefine) \
+        { .coarseValue = (uint8_t)(COARSE), .fineValue = (uint8_t)(FINE), \
+        .enabled = true, .sexN = false, \
+        .typeNormal = true, .currentLevelNormal = true }
+
+
 namespace davis_ros_driver {
 
 DavisRosDriver::DavisRosDriver(ros::NodeHandle & nh, ros::NodeHandle nh_private) :
-    nh_(nh), parameter_update_required_(false)
+    nh_(nh), parameter_update_required_(false), parameter_bias_update_required_(false)
 {
   // load parameters
   std::string dvs_serial_number;
@@ -62,38 +74,6 @@ DavisRosDriver::DavisRosDriver(ros::NodeHandle & nh, ros::NodeHandle nh_private)
   // Send the default configuration before using the device.
   // No configuration is sent automatically!
   caerDeviceSendDefaultConfig(davis_handle_);
-
-  // Tweak some biases, to increase bandwidth in this case.
-  struct caer_bias_coarsefine coarseFineBias;
-
-  coarseFineBias.coarseValue = 2;
-  coarseFineBias.fineValue = 116;
-  coarseFineBias.enabled = true;
-  coarseFineBias.sexN = false;
-  coarseFineBias.typeNormal = true;
-  coarseFineBias.currentLevelNormal = true;
-  caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP,
-    caerBiasCoarseFineGenerate(coarseFineBias));
-
-  coarseFineBias.coarseValue = 1;
-  coarseFineBias.fineValue = 33;
-  coarseFineBias.enabled = true;
-  coarseFineBias.sexN = false;
-  coarseFineBias.typeNormal = true;
-  coarseFineBias.currentLevelNormal = true;
-  caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP,
-    caerBiasCoarseFineGenerate(coarseFineBias));
-
-  // Let's verify they really changed!
-  uint32_t prBias, prsfBias;
-  caerDeviceConfigGet(davis_handle_, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP, &prBias);
-  caerDeviceConfigGet(davis_handle_, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP, &prsfBias);
-
-  printf("New bias values --- PR-coarse: %d, PR-fine: %d, PRSF-coarse: %d, PRSF-fine: %d.\n",
-    caerBiasCoarseFineParse(prBias).coarseValue, caerBiasCoarseFineParse(prBias).fineValue,
-    caerBiasCoarseFineParse(prsfBias).coarseValue, caerBiasCoarseFineParse(prsfBias).fineValue);
-
-
 
   current_config_.streaming_rate = 30;
   delta_ = boost::posix_time::microseconds(1e6/current_config_.streaming_rate);
@@ -181,6 +161,33 @@ void DavisRosDriver::changeDvsParameters()
         caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_APS, DAVIS_CONFIG_APS_RUN, current_config_.aps_enabled);
         caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_DVS, DAVIS_CONFIG_DVS_RUN, current_config_.dvs_enabled);
         caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_RUN, current_config_.imu_enabled);
+
+        if (current_config_.imu_gyro_scale >= 0 && current_config_.imu_gyro_scale <= 3)
+          caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_GYRO_FULL_SCALE, current_config_.imu_gyro_scale);
+
+        if (current_config_.imu_acc_scale >= 0 && current_config_.imu_acc_scale <= 3)
+          caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_IMU, DAVIS_CONFIG_IMU_ACCEL_FULL_SCALE, current_config_.imu_acc_scale);
+      }
+
+      // BIAS changes for DAVIS240
+      if (parameter_bias_update_required_)
+      {
+        parameter_bias_update_required_ = false;
+        caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRBP,
+            caerBiasCoarseFineGenerate(CF_P_TYPE(current_config_.PrBp_coarse, current_config_.PrBp_fine)));
+        caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_PRSFBP,
+            caerBiasCoarseFineGenerate(CF_P_TYPE(current_config_.PrSFBp_coarse, current_config_.PrSFBp_fine)));
+
+        caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_DIFFBN,
+            caerBiasCoarseFineGenerate(CF_N_TYPE(current_config_.DiffBn_coarse, current_config_.DiffBn_fine)));
+        caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_ONBN,
+            caerBiasCoarseFineGenerate(CF_N_TYPE(current_config_.ONBn_coarse, current_config_.ONBn_fine)));
+        caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_OFFBN,
+            caerBiasCoarseFineGenerate(CF_N_TYPE(current_config_.OFFBn_coarse, current_config_.OFFBn_fine)));
+
+        caerDeviceConfigSet(davis_handle_, DAVIS_CONFIG_BIAS, DAVIS240_CONFIG_BIAS_REFRBP,
+            caerBiasCoarseFineGenerate(CF_P_TYPE(current_config_.RefrBp_coarse, current_config_.RefrBp_fine)));
+
       }
 
       boost::this_thread::sleep(boost::posix_time::milliseconds(100));
@@ -197,7 +204,8 @@ void DavisRosDriver::callback(davis_ros_driver::DAVIS_ROS_DriverConfig &config, 
   // did any DVS bias setting change?
    if (current_config_.exposure != config.exposure || current_config_.frame_delay != config.frame_delay ||
        current_config_.aps_enabled != config.aps_enabled || current_config_.dvs_enabled != config.dvs_enabled ||
-       current_config_.imu_enabled != config.imu_enabled)
+       current_config_.imu_enabled != config.imu_enabled || current_config_.imu_acc_scale != config.imu_acc_scale ||
+       current_config_.imu_gyro_scale != config.imu_gyro_scale)
    {
      current_config_.exposure = config.exposure;
      current_config_.frame_delay = config.frame_delay;
@@ -206,7 +214,27 @@ void DavisRosDriver::callback(davis_ros_driver::DAVIS_ROS_DriverConfig &config, 
      current_config_.dvs_enabled = config.dvs_enabled;
      current_config_.imu_enabled = config.imu_enabled;
 
+     current_config_.imu_acc_scale = config.imu_acc_scale;
+     current_config_.imu_gyro_scale = config.imu_gyro_scale;
+
      parameter_update_required_ = true;
+   }
+
+   if (level & 1)
+   {
+     parameter_bias_update_required_ = true;
+     current_config_.PrBp_coarse = config.PrBp_coarse;
+     current_config_.PrBp_fine = config.PrBp_fine;
+     current_config_.PrSFBp_coarse = config.PrSFBp_coarse;
+     current_config_.PrSFBp_fine = config.PrSFBp_fine;
+     current_config_.DiffBn_coarse = config.DiffBn_coarse;
+     current_config_.DiffBn_fine = config.DiffBn_fine;
+     current_config_.ONBn_coarse = config.ONBn_coarse;
+     current_config_.ONBn_fine = config.ONBn_fine;
+     current_config_.OFFBn_coarse = config.OFFBn_coarse;
+     current_config_.OFFBn_fine = config.OFFBn_fine;
+     current_config_.RefrBp_coarse = config.RefrBp_coarse;
+     current_config_.RefrBp_fine = config.RefrBp_fine;
    }
 
    // change streaming rate, if necessary
