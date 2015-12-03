@@ -1,5 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <launch>  
-  <!-- camera driver -->
   <!-- camera driver -->
   <node ns="dvs_left" name="dvs_ros_driver" pkg="edvs_ros_driver" type="edvs_ros_driver" output="screen">
     <!-- Serial number is on the back of the DVS -->
