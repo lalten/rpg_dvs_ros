@@ -134,7 +134,7 @@ namespace Edvs
 				settings.c_iflag = IGNBRK;
 				settings.c_oflag = 0;
 				settings.c_lflag = 0;
-				settings.c_cc[VMIN] = 1; // minimum number of characters to receive before satisfying the read.
+				settings.c_cc[VMIN] = 6; // minimum number of characters to receive before satisfying the read.
 				settings.c_cc[VTIME] = 5; // time between characters before satisfying the read.
 				// write modified record of parameters to port
 				tcsetattr(port_, TCSANOW, &settings);
@@ -209,7 +209,7 @@ namespace Edvs
 			EventCapture() {
 			}
 			EventCapture(Device device, EventCallbackType f, size_t buffer_size=cDefaultBufferSize)
-			: device_(device), event_callback_(f), buffer_size_(buffer_size), running_(false), lastByteInBufferHadMsbSet(true) {
+			: device_(device), event_callback_(f), buffer_size_(buffer_size), running_(false), lastByteInBufferWasValid(true) {
 				StartEventCapture();
 			}
 			~EventCapture() {
@@ -250,12 +250,22 @@ namespace Edvs
 					}
 					buffA->clear();
 
+					// keep code below simple, but also prevent segmentation faults
+					if(bytes_read < 6)
+					{
+					  // we might lose some bytes, so packets might need to be dropped
+					  lastByteInBufferWasValid = false;
+            std::cout << "Edvs: Skip buffer (too few bytes)" << std::endl;
+            continue; // don't use this buffer, try reading again
+					}
+
 					size_t buffer_offset = 0;
 					while(buffer_offset < bytes_read) {
 
 						// Skip bytes until we have the second of two "MSB-positive" bytes in a row
-						if (! lastByteInBufferHadMsbSet) {
-							lastByteInBufferHadMsbSet = buffer[buffer_offset++] & 0x80;
+						if (! lastByteInBufferWasValid) {
+							lastByteInBufferWasValid = buffer[buffer_offset++] & 0x80;
+							std::cout << "Edvs: Skip byte (packet alignment corruption detected)" << std::endl;
 							continue;
 						}
 
@@ -278,7 +288,7 @@ namespace Edvs
 									f = buffer[buffer_offset++];
 									t = (t<<7) | (f & 0x7F);
 									if( ! (f & 0x80) ) { // if byte F's MSB is not set, we have a problem.
-										lastByteInBufferHadMsbSet = false;
+										lastByteInBufferWasValid = false;
 										continue; // we will skip bytes until have two consecutive ones whose MSB is set
 									}
 								}
@@ -312,7 +322,7 @@ namespace Edvs
 			EventCallbackType event_callback_;
 			size_t buffer_size_;
 			bool running_;
-			bool lastByteInBufferHadMsbSet;
+			bool lastByteInBufferWasValid;
 			boost::thread thread_;
 		};
 	}
