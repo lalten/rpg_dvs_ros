@@ -70,7 +70,7 @@ private:
 
   enum DisplayMethod
   {
-    GRAYSCALE, RED_BLUE
+    GRAYSCALE, RED_BLUE, PINK_GREEN
   } display_method_;
 };
 

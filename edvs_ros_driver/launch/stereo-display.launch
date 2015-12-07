@@ -3,11 +3,11 @@
 
   <!-- event rendering -->
   <node name="dvs_renderer_left" pkg="dvs_renderer" type="dvs_renderer" ns="dvs_left" output="screen">
-    <param name="display_method" value="red-blue"/>
+    <param name="display_method" value="pink-green"/>
   </node>
   
   <node name="dvs_renderer_right" pkg="dvs_renderer" type="dvs_renderer" ns="dvs_right" output="screen">
-    <param name="display_method" value="red-blue"/>
+    <param name="display_method" value="pink-green"/>
   </node>
   
   <!-- rectificationa and stereo processing -->
@@ -21,29 +21,14 @@
   </node>
 
   <!-- display -->
-  <node name="image_view_left_rect" pkg="image_view" type="image_view" output="screen">
-  	<remap from="image" to="/stereo/left/image_rect_color"/>
-  	<param name="window_name" value="rect left"/>
+  <node name="image_view_stereo_rect" pkg="image_view" type="stereo_view" output="screen">
+  	<remap from="image" to="image_rect_color"/>
+  	<param name="autosize" value="false"/>
   </node>
   
-  <node name="image_view_right_rect" pkg="image_view" type="image_view" output="screen">
-  	<remap from="image" to="/stereo/right/image_rect_color"/>
-  	<param name="window_name" value="rect right"/>
+  <node name="image_view_stereo_unrect" pkg="image_view" type="stereo_view" output="screen">
+  	<remap from="image" to="image_color"/>
+  	<param name="autosize" value="false"/>
   </node>
-  
-  <node name="image_view_left_unrect" pkg="image_view" type="image_view" output="screen">
-  	<remap from="image" to="/stereo/left/image_color"/>
-  	<param name="window_name" value="left"/>
-  </node>
-  
-  <node name="image_view_right_unrect" pkg="image_view" type="image_view" output="screen">
-  	<remap from="image" to="/stereo/right/image_color"/>
-  	<param name="window_name" value="right"/>
-  </node>
-  
-  <node name="image_view_disparity" pkg="image_view" type="disparity_view" output="screen">
-  	<remap from="image" to="/stereo/disparity"/>
-  	<param name="window_name" value="disparity"/>
-  </node>
-  
+    
 </launch>

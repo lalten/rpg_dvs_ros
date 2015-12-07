@@ -16,6 +16,9 @@
 #include "dvs_renderer/renderer.h"
 #include <std_msgs/Float32.h>
 
+#include <cmath>
+#include <cstring>
+
 namespace dvs_renderer {
 
 Renderer::Renderer(ros::NodeHandle & nh, ros::NodeHandle nh_private) : nh_(nh)
@@ -25,7 +28,16 @@ Renderer::Renderer(ros::NodeHandle & nh, ros::NodeHandle nh_private) : nh_(nh)
   // get parameters of display method
   std::string display_method_str;
   nh_private.param<std::string>("display_method", display_method_str, "");
-  display_method_ = (display_method_str == std::string("grayscale")) ? GRAYSCALE : RED_BLUE;
+  if (!strcasecmp(display_method_str.c_str(), "red-blue") || !strcasecmp(display_method_str.c_str(), "redblue")){
+    display_method_ = RED_BLUE;
+  }
+  else if (!strcasecmp(display_method_str.c_str(), "pink-green") || !strcasecmp(display_method_str.c_str(), "pinkgreen")){
+    display_method_ = PINK_GREEN;
+  }
+  else
+  {
+    display_method_ = GRAYSCALE;
+  }
 
   // setup subscribers and publishers
   event_sub_ = nh_.subscribe("events", 1, &Renderer::eventsCallback, this);
@@ -112,7 +124,40 @@ void Renderer::eventsCallback(const dvs_msgs::EventArray::ConstPtr& msg)
   {
     cv_bridge::CvImage cv_image;
 
-    if (display_method_ == RED_BLUE)
+    if (display_method_ == PINK_GREEN)
+    {
+      cv_image.encoding = "bgr8";
+
+      if (last_image_.rows == msg->height && last_image_.cols == msg->width)
+      {
+        last_image_.copyTo(cv_image.image);
+        used_last_image_ = true;
+      }
+      else
+      {
+        cv_image.image = cv::Mat(msg->height, msg->width, CV_8UC3);
+        cv_image.image = cv::Scalar(128, 128, 128);
+      }
+
+      double oldest = std::numeric_limits<double>::infinity();
+      double newest = -1;
+      for(const dvs_msgs::Event& event : msg->events)
+      {
+        oldest = std::min(oldest, event.ts.toSec());
+        newest = std::max(newest, event.ts.toSec());
+      }
+      const double timespan = newest-oldest;
+
+      for (int i = 0; i < msg->events.size(); ++i)
+      {
+        const int x = msg->events[i].x;
+        const int y = msg->events[i].y;
+        const uint8_t color = 64 + std::floor(0.5 + 192.0 * (msg->events[i].ts.toSec() - oldest)/timespan);
+        cv_image.image.at<cv::Vec3b>(cv::Point(x, y)) = (
+            msg->events[i].polarity == true ? cv::Vec3b(0, color, 0) : cv::Vec3b(color, 0, color));
+      }
+    }
+    else if (display_method_ == RED_BLUE)
     {
       cv_image.encoding = "bgr8";
 
