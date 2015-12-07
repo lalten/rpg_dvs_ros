@@ -14,6 +14,8 @@
 // along with DVS-ROS.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "dvs_calibration/dvs_calibration.h"
+#include <string>
+#include <iostream>       // std::cout
 
 namespace dvs_calibration {
 
@@ -53,6 +55,22 @@ void DvsCalibration::eventsCallback(const dvs_msgs::EventArray::ConstPtr& msg, i
   if (transition_maps_[camera_id].max() > params_.enough_transitions_threshold) {
     transition_maps_[camera_id].find_pattern();
     if (transition_maps_[camera_id].has_pattern()) {
+      updateVisualization(camera_id);
+      ROS_INFO("Found pattern. Should we take it?");
+		//should we use the pattern?
+		//std::string line;
+		std::string line;
+		std::getline(std::cin, line);
+		std::cout << "read line: " << line << std::endl;
+
+		std::string str2 ("take");
+		std::size_t found = line.find(str2);
+		if (found!=std::string::npos)
+			std::cout << "accept image: " << std::endl;
+		else
+			std::cout << "ignore image: " << std::endl;
+
+
       ROS_DEBUG("Found pattern.");
       addPattern(camera_id);
 
