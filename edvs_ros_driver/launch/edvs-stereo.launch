@@ -3,7 +3,7 @@
   <!-- camera driver -->
   <node ns="dvs_left" name="dvs_ros_driver" pkg="edvs_ros_driver" type="edvs_ros_driver" output="screen">
     <!-- Serial number is on the back of the DVS -->
-  	<param name="serial_number" type="str" value="/dev/ttyUSB0" />
+  	<param name="serial_number" type="str" value="/dev/ttyUSB1" />
 
     <!-- Set as master -->
   	<param name="master" type="bool" value="true" />
@@ -17,7 +17,7 @@
   
   <node ns="dvs_right" name="dvs_ros_driver" pkg="edvs_ros_driver" type="edvs_ros_driver" output="screen">
     <!-- Serial number is on the back of the DVS -->
-  	<param name="serial_number" type="str" value="/dev/ttyUSB1" />
+  	<param name="serial_number" type="str" value="/dev/ttyUSB0" />
 
     <!-- Set as slave -->
   	<param name="master" type="bool" value="false" />
