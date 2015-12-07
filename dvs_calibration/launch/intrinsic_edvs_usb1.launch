@@ -27,8 +27,8 @@
     <param name="pattern_search_timeout" value="1"/>
     
     <param name="dots_w" value="4"/>
-    <param name="dots_h" value="3"/>
-    <param name="dot_distance" value="0.12"/>
+    <param name="dots_h" value="4"/>
+    <param name="dot_distance" value="0.04"/>
   </node>
 
   <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui" args="--perspective-file $(find dvs_calibration_gui)/rqt/IntrinsicCalibration.perspective" />

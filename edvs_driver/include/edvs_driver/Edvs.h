@@ -286,8 +286,8 @@ namespace Edvs
 						}
 
 						// create event
-						uint8_t x = b & 0x7F;
-						uint8_t y = a & 0x7F;
+						uint8_t x = a & 0x7F;
+						uint8_t y = 127 - (b & 0x7F);
 						bool pol = b & 0x80;
 
 						buffA->push_back( Event{x,y,pol,t} );
