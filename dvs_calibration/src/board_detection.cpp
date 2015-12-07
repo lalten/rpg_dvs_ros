@@ -68,7 +68,7 @@ std::vector<cv::Point2f> BoardDetection::findPattern(std::list<PointWithWeight> 
     for (int i = 0; i < clusters.size(); ++i)
     {
       cv::Point2f center(0, 0);
-      int mass = 0;
+      double mass = 0;
       std::list<PointWithWeight>::iterator cluster_it;
       for (cluster_it = clusters[i].begin(); cluster_it != clusters[i].end(); ++cluster_it)
       {
@@ -76,8 +76,8 @@ std::vector<cv::Point2f> BoardDetection::findPattern(std::list<PointWithWeight> 
         center.y += cluster_it->point.y * cluster_it->weight;
         mass += cluster_it->weight;
       }
-      center.x /= (double)mass;
-      center.y /= (double)mass;
+      center.x /= mass;
+      center.y /= mass;
       centers.push_back(center);
     }
 
