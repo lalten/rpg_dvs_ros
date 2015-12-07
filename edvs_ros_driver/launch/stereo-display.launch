@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <!-- event rendering -->
+  <node name="dvs_renderer_left" pkg="dvs_renderer" type="dvs_renderer" ns="dvs_left" output="screen">
+    <param name="display_method" value="red-blue"/>
+  </node>
+  
+  <node name="dvs_renderer_right" pkg="dvs_renderer" type="dvs_renderer" ns="dvs_right" output="screen">
+    <param name="display_method" value="red-blue"/>
+  </node>
+  
+  <!-- rectificationa and stereo processing -->
+  <node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc" ns="stereo" output="screen">
+    <remap from="left/image_raw" to="/dvs_left/dvs_rendering"/>
+    <remap from="left/camera_info" to="/dvs_left/camera_info"/>
+    <remap from="right/image_raw" to="/dvs_right/dvs_rendering"/>
+    <remap from="right/camera_info" to="/dvs_right/camera_info"/>
+    
+    <param name="approximate_sync" value="false"/>
+  </node>
+
+  <!-- display -->
+  <node name="image_view_left_rect" pkg="image_view" type="image_view" output="screen">
+  	<remap from="image" to="/stereo/left/image_rect_color"/>
+  	<param name="window_name" value="rect left"/>
+  </node>
+  
+  <node name="image_view_right_rect" pkg="image_view" type="image_view" output="screen">
+  	<remap from="image" to="/stereo/right/image_rect_color"/>
+  	<param name="window_name" value="rect right"/>
+  </node>
+  
+  <node name="image_view_left_unrect" pkg="image_view" type="image_view" output="screen">
+  	<remap from="image" to="/stereo/left/image_color"/>
+  	<param name="window_name" value="left"/>
+  </node>
+  
+  <node name="image_view_right_unrect" pkg="image_view" type="image_view" output="screen">
+  	<remap from="image" to="/stereo/right/image_color"/>
+  	<param name="window_name" value="right"/>
+  </node>
+  
+  <node name="image_view_disparity" pkg="image_view" type="disparity_view" output="screen">
+  	<remap from="image" to="/stereo/disparity"/>
+  	<param name="window_name" value="disparity"/>
+  </node>
+  
+</launch>
