@@ -56,7 +56,10 @@ EDVS_Driver::EDVS_Driver(std::string edvs_port, bool master) {
 
 	  capture = new Edvs::EventCapture(*device, cbf);
   } catch (std::runtime_error &ex) {
-	  std::cerr << ex.what() <<std::endl;
+    ROS_ERROR(ex.what());
+    device_mutex.unlock();
+    device = nullptr; // Not sure this is necessary. Also, do we have a memory leak if the exception comes from eventcapture?
+    return;
   }
   device_mutex.unlock();
 

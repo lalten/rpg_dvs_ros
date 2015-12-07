@@ -255,7 +255,9 @@ namespace Edvs
 					{
 					  // we might lose some bytes, so packets might need to be dropped
 					  lastByteInBufferWasValid = false;
+#ifdef VERBOSE
             std::cout << "Edvs: Skip buffer (too few bytes)" << std::endl;
+#endif
             continue; // don't use this buffer, try reading again
 					}
 
@@ -265,7 +267,9 @@ namespace Edvs
 						// Skip bytes until we have the second of two "MSB-positive" bytes in a row
 						if (! lastByteInBufferWasValid) {
 							lastByteInBufferWasValid = buffer[buffer_offset++] & 0x80;
+#ifdef VERBOSE
 							std::cout << "Edvs: Skip byte (packet alignment corruption detected)" << std::endl;
+#endif
 							continue;
 						}
 

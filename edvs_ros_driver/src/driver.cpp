@@ -39,7 +39,7 @@ EdvsRosDriver::EdvsRosDriver(ros::NodeHandle & nh, ros::NodeHandle nh_private) :
 
     if (!dvs_running)
     {
-	  delete driver_;
+      delete driver_;
       ROS_WARN("Could not find DVS. Will retry every second.");
       ros::Duration(1.0).sleep();
       ros::spinOnce();
