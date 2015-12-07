@@ -4,16 +4,12 @@
   <include file="$(find edvs_ros_driver)/launch/edvs-stereo.launch" />
 
   <!-- visualization -->
-  <node name="dvs_renderer_left" pkg="dvs_renderer" type="dvs_renderer">
+  <node name="dvs_renderer_left" pkg="dvs_renderer" type="dvs_renderer" ns="dvs_left">
     <param name="display_method" value="grayscale"/>
-    <remap from="events" to="/dvs_left/events" />
-    <remap from="dvs_rendering" to="dvs_rendering_left" />
   </node>
 
-  <node name="dvs_renderer_right" pkg="dvs_renderer" type="dvs_renderer">
+  <node name="dvs_renderer_right" pkg="dvs_renderer" type="dvs_renderer" ns="dvs_right">
     <param name="display_method" value="grayscale"/>
-    <remap from="events" to="/dvs_right/events" />
-    <remap from="dvs_rendering" to="dvs_rendering_right" />
   </node>
 
   <!-- calib node -->
@@ -33,7 +29,7 @@
     <param name="pattern_search_timeout" value="1"/>
     
     <param name="dots_w" value="4"/>
-    <param name="dots_h" value="4"/>
+    <param name="dots_h" value="3"/>
     <param name="dot_distance" value="0.04"/>
   </node>
 
