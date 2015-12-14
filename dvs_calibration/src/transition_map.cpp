@@ -57,20 +57,30 @@ void TransitionMap::update(const dvs_msgs::EventArray::ConstPtr& msg)
     {
       int delta_t_us = (msg->events[i].ts - last_off_map_[msg->events[i].x][msg->events[i].y]).toSec()*1e6;
       if (delta_t_us < params_.blinking_time_us + params_.blinking_time_tolerance_us && delta_t_us > params_.blinking_time_us - params_.blinking_time_tolerance_us) {
-        int x = msg->events[i].x;
-        int y = msg->events[i].y;
+        const int x = msg->events[i].x;
+        const int y = msg->events[i].y;
 
-        transition_sum_map_[x][y] += 1;
+        // 3x3 Gaussian distribution
+        transition_sum_map_[x][y] += 0.25;
+        if(x > 0)              transition_sum_map_[x-1][y] += .125;
+        if(x < 127)            transition_sum_map_[x+1][y] += .125;
+        if(y > 0)              transition_sum_map_[x][y-1] += .125;
+        if(y < 127)            transition_sum_map_[x][y+1] += .125;
+        if(x > 0 && y > 0)     transition_sum_map_[x-1][y-1] += .0625;
+        if(x < 127 && y > 0)   transition_sum_map_[x+1][y-1] += .0625;
+        if(x < 127 && y < 127) transition_sum_map_[x+1][y+1] += .0625;
+        if(x > 0 && y < 127)   transition_sum_map_[x-1][y+1] += .0625;
 
-        // Neighbors get some, too?
-        if(x > 0)              transition_sum_map_[x-1][y] += .5;
-        if(x < 127)            transition_sum_map_[x+1][y] += .5;
-        if(y > 0)              transition_sum_map_[x][y-1] += .5;
-        if(y < 127)            transition_sum_map_[x][y+1] += .5;
-        if(x > 0 && y > 0)     transition_sum_map_[x-1][y-1] += .354;
-        if(x < 127 && y > 0)   transition_sum_map_[x+1][y-1] += .354;
-        if(x < 127 && y < 127) transition_sum_map_[x+1][y+1] += .354;
-        if(x > 0 && y < 127)   transition_sum_map_[x-1][y+1] += .354;
+        // At borders, add to center pixel instead to keep sum at 1
+        if(! x > 0)                transition_sum_map_[x][y] += .125;
+        if(! x < 127)              transition_sum_map_[x][y] += .125;
+        if(! y > 0)                transition_sum_map_[x][y] += .125;
+        if(! y < 127)              transition_sum_map_[x][y] += .125;
+        if(! x > 0 && ! y > 0)     transition_sum_map_[x][y] += .0625;
+        if(! x < 127 && ! y > 0)   transition_sum_map_[x][y] += .0625;
+        if(! x < 127 && ! y < 127) transition_sum_map_[x][y] += .0625;
+        if(! x > 0 && ! y < 127)   transition_sum_map_[x][y] += .0625;
+
       }
     }
   }
