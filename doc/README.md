@@ -109,9 +109,10 @@ Our first calibration experiments used one of the following setups: (1) The eDVS
 
 ![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/eDVS-moving-trail-vs-fixed.svg)
 
+
 Our solution is to use both (1) a statically mounted camera and (2) a fixed mounted board. As both parts are physically not moving, we prevent the infulence of pixel trails and get better results. In order to collect image points of blinking LEDs in the hole viewing are of the sensor, the board's software moves the illuminated pattern every 10 seconds. The following picture shows the bord at the beginning and after some seconds.
 
-<!-- TODO: insert image of moving led pattern on board -->
+![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/led-board-moving-pattern.svg)
 
 #### Wrong Buffering rejects Events
 The buffer in the original `eDVS.h` read all avalable bytes on the serial interface. Sometimes, the buffer ended in the middle of an event package. Then, it rejected the package, because it was incomplete. Our solution was to always read at least six bytes from the serial before we try to process it. 
