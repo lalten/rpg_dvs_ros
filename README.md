@@ -40,9 +40,13 @@ Only a udev rule is needed to run the DVS driver. An install script is provided 
 2. `$ roscd libcaer_catkin`  
 3. `$ ./install.sh` (needs root privileges)
 
-You can test the installation by running a provided launch file. It starts the driver (DVS or DAVIS), the renderer, an image viewer, and the dynamic reconfigure GUI.   
-4. `$ roslaunch dvs_renderer dvs_mono.launch`  
-5. `$ roslaunch dvs_renderer davis_mono.launch`  
+You can test the installation by running a provided launch file. It starts the driver (DVS, DAVIS or eDVS), the renderer, an image viewer, and the dynamic reconfigure GUI.   
+4. `$ source devel/setup.bash`
+5. `$ catkin_make`
+6. `$ roslaunch dvs_renderer dvs_mono.launch` or e.g. `$ roslaunch dvs_renderer davis_mono.launch`  
+You can then start the calibration of one camera
+7. `$ roslaunch dvs_calibration intrinsic_edvs.launch` or any other launchfile, e.g. for DVS or DAVIS
+
 
 ## Very detailed example of installation (tested on Ubuntu 14.04.01 LTS)
 ```
@@ -104,15 +108,6 @@ sudo apt-get install ros-jade-image-view
 sudo aptitude install ros-jade-stereo-image-proc 
 ```
 
-## Build Issues after Update / git pull
-
-Sometimes, there seems that catkin_make does not refresh all files.
-E.g. if you get an error message of a missing header file, try the following:
-- Edit dvs_msgs/CMakeLists.txt (e.g. add just a new line and store it)
-- run catkin_make clean
-- run catkin_make
-
-Now the new header files get also built.
 
 # DVS Calibration
 The calibration of a DVS is a two-stage procedure. First, the focus must be adjusted. Then, the intrinsic camera parameters are estimated.   
@@ -223,3 +218,12 @@ If you recorded rosbags with a previous version of this package, they must be mi
 The format for the timestamps changed from uint64 to rostime.
 To convert an "old" bag file, use   
 `$ rosbag fix old.bag new.bag`.
+
+## Build Issues after Update / git pull
+Sometimes, there seems that catkin_make does not refresh all files.
+E.g. if you get an error message of a missing header file, try the following:
+- Edit dvs_msgs/CMakeLists.txt (e.g. add just a new line and store it)
+- run catkin_make clean
+- run catkin_make
+
+Now the new header files get also built.
