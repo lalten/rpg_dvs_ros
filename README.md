@@ -105,6 +105,49 @@ If you have your own LED board with different LEDs or blinking frequencies, you 
 * `minimum_led_mass` (default: 50) is the minimum "mass" of an LED blob, i.e., the sum of transitions in this blop
 * `pattern_search_timeout` (default: 2.0) is the timeout in **seconds** when the transition map is reset (it is also reset when the LED grid was found)
 
+# Tools
+
+## Store detected patterns
+
+In order to analyze, which points where detected, one can record the result from two topics:
+- /dvs_calibration/detected_points_left_or_single
+- /dvs_calibration/detected_points_left_or_single_pattern
+
+
+Here a short example, how to e.g. record and view the data:
+```
+#first source resources
+source devel/setup.bash
+
+#run the calibration interface
+roslaunch dvs_calibration intrinsic_edvs.launch
+
+#now, on e.g. other terminal
+#this will display only the transition maps with detected points
+rosrun image_view image_view image:=/dvs_calibration/detected_points_left_or_single_pattern &
+
+#this will show the detected points messages
+rostopic echo /dvs_calibration/detected_points_left_or_single &
+
+#this will record both of them in a file
+rosbag record /dvs_calibration/detected_points_left_or_single_pattern /dvs_calibration/detected_points_left_or_single
+```
+
+For playback of the recorded data, run:
+```
+roscore &
+
+#this will show the detected points messages
+rostopic echo /dvs_calibration/detected_points_left_or_single &
+
+#play in an endless loop the file
+rosbag play -l 2015-12-14-15-17-38.bag 
+
+#or step through the file: press p in the command window or
+#space to pause playback
+#rosbag play --pause 2015-12-14-15-17-38.bag 
+```
+
 # Troubleshooting
 ## New dvs_msgs format
 If you recorded rosbags with a previous version of this package, they must be migrated. 
