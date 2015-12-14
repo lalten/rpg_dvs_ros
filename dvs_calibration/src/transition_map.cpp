@@ -110,7 +110,20 @@ cv::Mat TransitionMap::get_visualization_image()
 
   if (has_pattern())
   {
-    cv::drawChessboardCorners(image, cv::Size(params_.dots_w, params_.dots_h), cv::Mat(pattern), true);
+    // Resize image to draw sharper/sub-pixel ChessboardCorners
+    const int upscale_factor = 4;
+    cv::Mat upscale_image;
+    cv::Size upscale_size = cv::Size(image.rows * upscale_factor, image.cols * upscale_factor);
+    cv::resize(image, upscale_image, upscale_size, 0, 0, cv::INTER_NEAREST);
+    std::vector<cv::Point2f> upscale_pattern = pattern;
+    for (cv::Point2f& p : upscale_pattern) {
+      p.x *= upscale_factor;
+      p.y *= upscale_factor;
+    }
+
+    cv::drawChessboardCorners(upscale_image, cv::Size(params_.dots_w, params_.dots_h), cv::Mat(upscale_pattern), true);
+
+    return upscale_image;
   }
 
   return image;
