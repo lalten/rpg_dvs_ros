@@ -149,11 +149,13 @@ void TransitionMap::find_pattern()
   {
     for (int j = 0; j < sensor_height_; j++)
     {
-      if (transition_sum_map_[i][j] > params_.minimum_transitions_threshold)
+
+      double val = transition_sum_map_[i][j] - params_.minimum_transitions_threshold;
+      if (val > 0)
       {
         PointWithWeight p;
         p.point = cv::Point(i, j);
-        p.weight = (double) transition_sum_map_[i][j];
+        p.weight = val;
         points.push_back(p);
       }
     }
