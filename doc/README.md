@@ -17,9 +17,62 @@ An eDVS (embedded Dynamic Vision Sensor) produces an event stream. Compared to a
 
 ### Software Setup
 
-### eDVS Driver for ROS
+#### Existing Software as Starting Point
+Camera calibration and rectification is already done routinely for "normal", frame-based cameras. Therefore, there exist many tools to tackle the task. One of them is the open-source computer vision library [OpenCV](http://opencv.org/). Based on this library, the open source [Robot Operating System (ROS)](http://wiki.ros.org/camera_calibration) provides a package, called [Camera Calibration](http://wiki.ros.org/camera_calibration). It helps to facilitate the calibration process of &bdquo;monocular or stereo cameras using a checkerboard calibration target&ldquo; <sup>[1](http://wiki.ros.org/camera_calibration)</sup>. Unfortunately, it is only for frame-based cameras. For that reason, the [Robotics and Perception Group of Zurich](http://rpg.ifi.uzh.ch/) published another open-source package for ROS called [rpg_dvs_ros](https://github.com/uzh-rpg/rpg_dvs_ros). The software tries to use existing parts of the camera_calibration pacakge and OpenCV again. 
 
+Instead of trying to reinvent the wheel again, we think the best approach is to build upon proven existing software. Therefore, this project uses the rpg_dvs_ros  package as starting point. We forked the original repository in order to implement and add our new features. 
 
+#### eDVS Driver for ROS
+
+The rpg_dvs_ros package (DVS_ROS) expects a rostopic input stream of the format `dvs::EventArray`. The eDVS on the other hand provides the event stream using its own custom protocol. The used communication channel is an emulated serial device over UART. Further details provides the [IniLabs eDVS guide](http://inilabs.com/support/hardware/edvs/) as well as the [Siliconretina Wiki of the INI Zurich](http://siliconretina.ini.uzh.ch/wiki/index.php). After connecting the eDVS camera over USB to a linux computer, an emulated serial device usually called `/dev/ttyUSB0` will be created. Using the console, one can send and receive commands on the interface, for example as illustrated below:
+
+```
+#set interface speed to 4Mbit
+#set to 8N1 mode
+$ stty -F /dev/ttyUSB0 4000000 raw
+
+#start background process to see camera output
+$ cat /dev/ttyUSB0 &
+
+#send reset command to the camera
+$ echo -ne 'R\n!' > /dev/ttyUSB0
+
+#set event mode to 1 and start sending events
+$ echo -ne '!E1\nE+\n' > /dev/ttyUSB0
+
+#display help of available commands
+$ echo -ne '??\n' > /dev/ttyUSB0
+
+#answer could be:
+EDVS128_LPC2106, V2.2: Apr 22 2015, 17:16:20  (TIMESYNC)
+System Clock: 64MHz / 1us event time resolution
+Supported Commands:
+ E+/-       - enable/disable event sending
+ !Ex        - specify event data format, ??E to list options
+ !ET[=x]    - set/reset the event timestamp
+ !ET[M0,M+] - active synchronized time master mode; 0:stop, +:run
+ !ETS       - active synchronized time slave mode
+ !Bx=y      - set bias register x[0..11] to value y[0..0xFFFFFF]
+ !BF        - send bias settings to DVS
+ !BDx       - select and flush default bias set (default: set 0)
+ ?Bx        - get bias register x current value
+ 0,1,2      - LED off/on/blinking
+ !S=x       - set baudrate to x
+ !S[0,1,2]  - UART echo mode (none, cmd-reply, all)
+ R          - reset board
+ P          - enter reprogramming mode
+ ??         - display help
+??E
+ !E0   - 2 bytes per event binary 0yyyyyyy.pxxxxxxx (default)
+ !E1   - 1..3 bytes timestamp (7bits each), time difference (1us resolution)
+ !E2   - 4 bytes per event (as above followed by 16bit timestamp 1us res)
+ !E3   - 5 bytes per event (as above followed by 24bit timestamp 1us res)
+ !E4   - 6 bytes per event (as above followed by 32bit timestamp 1us res)
+ ```
+
+> **Note** When sending multiple commands in one echo, e.g. `$ echo -ne 'R\n!S2\n!E1\nE+\n' > /dev/ttyUSB0`, the eDVS microcontroller might behave unexpected. We experienced some issues like the camera not starting to send data.
+
+The eDVS driver for ros is based on an [eDVS.h file from NST TUM](https://wiki.lsr.ei.tum.de/nst/programming/edvs-cpp).   
 
 ### Results
 
@@ -28,6 +81,9 @@ An eDVS (embedded Dynamic Vision Sensor) produces an event stream. Compared to a
 Example of an original image vs. undistored image:
 ![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/original-vs-undistored-image.svg)
 
-Camera calibration and rectification is already done routinely for "normal", frame-based cameras. Therefore, there exist many tools to tackle the task. One of them is the open-source computer vision library [OpenCV](http://opencv.org/). Based on this library, the open source [Robot Operating System ROS](http://wiki.ros.org/camera_calibration) provides also a package, called [Camera Calibration](http://wiki.ros.org/camera_calibration).
 
+### ToDo
 
+#### Improve eDVS Ros Driver
+
+There already exists an improved version of the basic eDVS.h file, which was the starting point for the ros driver. Maybe one should evaluate, weather switching to the more recent version of [the library (edvstools)](https://github.com/Danvil/edvstools) is worthwile. 
