@@ -19,6 +19,8 @@
 #include <cmath>
 #include <cstring>
 
+#include <opencv2/calib3d/calib3d.hpp>
+
 namespace dvs_renderer {
 
 Renderer::Renderer(ros::NodeHandle & nh, ros::NodeHandle nh_private) : nh_(nh)
@@ -38,6 +40,11 @@ Renderer::Renderer(ros::NodeHandle & nh, ros::NodeHandle nh_private) : nh_(nh)
   {
     display_method_ = GRAYSCALE;
   }
+
+  // alpha – Free scaling parameter between 0 (when all the pixels in the
+  // undistorted image are valid) and 1 (when all the source image pixels
+  // are retained in the undistorted image). See stereoRectify() for details.
+  nh_private.param<double>("undistort_alpha", undistort_alpha, 0);
 
   // setup subscribers and publishers
   event_sub_ = nh_.subscribe("events", 1, &Renderer::eventsCallback, this);
@@ -219,7 +226,10 @@ void Renderer::eventsCallback(const dvs_msgs::EventArray::ConstPtr& msg)
     {
       cv_bridge::CvImage cv_image2;
       cv_image2.encoding = cv_image.encoding;
-      cv::undistort(cv_image.image, cv_image2.image, camera_matrix_, dist_coeffs_);
+      cv::Mat new_mat = cv::getOptimalNewCameraMatrix(camera_matrix_, dist_coeffs_,
+          cv::Size(cv_image.image.rows, cv_image.image.cols), undistort_alpha,
+          cv::Size(cv_image.image.rows, cv_image.image.cols), 0, true);
+      cv::undistort(cv_image.image, cv_image2.image, new_mat, dist_coeffs_);
       undistorted_image_pub_.publish(cv_image2.toImageMsg());
     }
   }
