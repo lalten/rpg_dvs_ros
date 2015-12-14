@@ -72,7 +72,11 @@ Supported Commands:
 
 > **Note** When sending multiple commands in one echo, e.g. `$ echo -ne 'R\n!S2\n!E1\nE+\n' > /dev/ttyUSB0`, the eDVS microcontroller might behave unexpected. We experienced some issues like the camera not starting to send data.
 
-The eDVS driver for ros is based on an [eDVS.h file from NST TUM](https://wiki.lsr.ei.tum.de/nst/programming/edvs-cpp).   
+The eDVS driver for ros is based on an [eDVS.h file from NST TUM](https://wiki.lsr.ei.tum.de/nst/programming/edvs-cpp). A newly developed `edvs_ros_driver` package uses the `eDVS.h` to exchange data with the hardware. It's main purpose is the setup and integration, mainly
+- reset eDVS and set proper event format
+- set master and slave for time synchronization in stereo setup mode
+- reset timestamps on sensors
+- provide sensor information, e.g. resolution.
 
 ### Results
 
@@ -82,7 +86,24 @@ Example of an original image vs. undistored image:
 ![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/original-vs-undistored-image.svg)
 
 
-### ToDo
+### Learnings
+
+#### LED Board with too many blinking LEDs
+<!-- TODO: provide image of led board with all leds on -->
+At the beginning we experimented with a LED board with 81 LEDs (200Hz). It produced too many events. We discovered, that the eDVS can not cope with so many events (even when under 4mBIt data rate). On the other hand, the DVS (not eDVS) has no problem with that many events. In our experience the DVS usually reports many more events from the same scene. 
+
+#### Reflection from LED Board
+<!-- TODO: provide image -->
+LEDs near to the border of the board reflected too strong. They had a negative influence on the pattern detection. We experimented with some textile to absorb the reflections. The result was surpringsingly good. Yet, for our final solution, we disable the LEDs at the border to achieve the same (and do not depend on a textile). 
+
+#### Movements during Calibration Process
+Our first calibration experiments used one of the following setups: (1) The eDVS was moved around to produce events of a fixed LED board from different point of views. (2) The eDVS was fixed, while the LED board was moved around in its field of view. These approaches resulted in some issues: The subpixel accuracy calculation of the LED's center was disturbed by the moving scene. As the sensor does not produce frames, but a constant stream of events, the accumulated events of a timeframe (transition map) included a LED point, which moved. The result was a visible trail of the movement in the transition map. Therefore the estimated center of the LED was not correct. This lead to suboptimal calibration results.
+
+Our solution is to use both (1) a statically mounted camera and (2) a fixed mounted board. As both parts are physically not moving, we prevent the infulence of pixel trails and get better results. In order to collect image points of blinking LEDs in the hole viewing are of the sensor, the board's software moves the illuminated pattern every 10 seconds. The following picture shows the bord at the beginning and after some seconds.
+
+<!-- TODO: insert image of moving led pattern on board -->
+
+
 
 #### Improve eDVS Ros Driver
 
