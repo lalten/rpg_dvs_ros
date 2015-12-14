@@ -44,6 +44,75 @@ You can test the installation by running a provided launch file. It starts the d
 4. `$ roslaunch dvs_renderer dvs_mono.launch`  
 5. `$ roslaunch dvs_renderer davis_mono.launch`  
 
+## Very detailed example of installation (tested on Ubuntu 14.04.01 LTS)
+```
+sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+sudo apt-get update 
+sudo apt-get install ros-jade-desktop
+sudo apt-get install ros-jade-camera-info-manager
+sudo rosdep init
+rosdep update
+echo "source /opt/ros/jade/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+
+
+#create project folder
+mkdir -p catkin_ws/src
+cd catkin_ws/src/
+catkin_init_workspace 
+cd ..
+catkin_make
+#working
+#install source
+cd src/
+git clone git@github.com:lalten/rpg_dvs_ros.git
+git clone git@github.com:catkin/catkin_simple.git
+#got some errors for missing libraries
+#see https://github.com/lalten/rpg_dvs_ros
+sudo apt-get install libusb-1.0-0-dev
+
+#install libcaer for dvs128
+cd /tmp/
+svn checkout https://svn.code.sf.net/p/jaer/code/libcaer/trunk/
+cd cmake -DCMAKE_INSTALL_PREFIX=/usr
+make
+sudo make install
+#got compile errors, install gcc 4.9
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get update
+sudo apt-get install g++-4.9
+sudo rm /usr/bin/gcc
+sudo ln -s /usr/bin/gcc-4.9 /usr/bin/gcc
+#now try install again
+make
+sudo make install
+
+#now go to project folder
+#make project
+cd catkin_ws/
+catkin_make
+
+#run project
+source devel/setup.bash
+roslaunch dvs_calibration intrinsic_edvs.launch
+
+#furthermore, for some tools of the packae this are neccessary
+#for dvs_render
+sudo apt-get install ros-jade-image-view
+
+#for rosrun image_view 
+sudo aptitude install ros-jade-stereo-image-proc 
+```
+
+## Build Issues after Update / git pull
+
+Sometimes, there seems that catkin_make does not refresh all files.
+E.g. if you get an error message of a missing header file, try the following:
+- Edit dvs_msgs/CMakeLists.txt (e.g. add just a new line and store it)
+- run catkin_make clean
+- run catkin_make
+
+Now the new header files get also built.
 
 # DVS Calibration
 The calibration of a DVS is a two-stage procedure. First, the focus must be adjusted. Then, the intrinsic camera parameters are estimated.   
