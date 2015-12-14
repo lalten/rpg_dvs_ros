@@ -31,7 +31,7 @@ If you use this work in an academic context, please cite the following publicati
 
 Install **catkin_simple** from https://github.com/catkin/catkin_simple.git
 
-Install **libcaer** from https://svn.code.sf.net/p/jaer/code/libcaer/trunk/ ([Instructions](http://inilabs.com/support/software/libcaer/))
+Install **libcaer** from https://svn.code.sf.net/p/jaer/code/libcaer/trunk/ ([Instructions](http://inilabs.com/support/software/libcaer/)) -- note that you will need gcc 4.9 or higher
 
 Make sure, libusb is installed on your system:  
 1. `$ sudo apt-get install libusb-1.0-0-dev`
