@@ -52,6 +52,7 @@ void DvsCalibration::eventsCallback(const dvs_msgs::EventArray::ConstPtr& msg, i
   transition_maps_[camera_id].update(msg);
   if (transition_maps_[camera_id].max() > params_.enough_transitions_threshold) {
     transition_maps_[camera_id].find_pattern();
+    ROS_DEBUG("Try to find pattern");
     if (transition_maps_[camera_id].has_pattern()) {
       ROS_DEBUG("Found pattern.");
       addPattern(camera_id);
@@ -61,9 +62,12 @@ void DvsCalibration::eventsCallback(const dvs_msgs::EventArray::ConstPtr& msg, i
       num_detections_pub_.publish(msg);
 
       updateVisualization(camera_id);
+
+      //reset transition map, because we found a pattern
+      transition_maps_[camera_id].reset_maps();
     }
 
-    transition_maps_[camera_id].reset_maps();
+
   }
   else {
     updateVisualization(camera_id);
