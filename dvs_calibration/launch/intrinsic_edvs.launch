@@ -24,7 +24,7 @@
     <!-- enough transitions to start to try to find a pattern -->
     <param name="enough_transitions_threshold" value="20" />
     <!-- minimum transitions of a pixel in order to get used for the point detection -->
-    <param name="minimum_transitions_threshold" value="0" />
+    <param name="minimum_transitions_threshold" value="3" />
     <!-- minimum led mass of a cluser in order to get accepted -->
     <param name="minimum_led_mass" value="1" />
     <!-- seconds after which the transition map will be reset-->
