@@ -22,6 +22,11 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 
+#include <dvs_msgs/Point2f.h>
+#include <dvs_msgs/Point3f.h>
+#include <dvs_msgs/ImageObjectPoints.h>
+
+
 #include <dvs_msgs/Event.h>
 #include <dvs_msgs/EventArray.h>
 #include <std_msgs/Int32.h>
@@ -91,6 +96,8 @@ protected:
   ros::Publisher num_detections_pub_;
   ros::Publisher calibration_output_pub_;
 
+  ros::Publisher detected_points_left_or_single_pub_;
+  image_transport::Publisher detected_points_left_or_single_pattern_pub_;
 
   void loadCalibrationParameters();
 };

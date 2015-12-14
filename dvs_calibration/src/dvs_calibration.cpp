@@ -26,6 +26,12 @@ DvsCalibration::DvsCalibration()
   num_detections_pub_ = nh_.advertise<std_msgs::Int32>("dvs_calibration/pattern_detections", 1);
   calibration_output_pub_ = nh_.advertise<std_msgs::String>("dvs_calibration/output", 1);
 
+  detected_points_left_or_single_pub_ = nh_.advertise<dvs_msgs::ImageObjectPoints>("dvs_calibration/detected_points_left_or_single", 1);
+
+  image_transport::ImageTransport it(nh_);
+  detected_points_left_or_single_pattern_pub_ = it.advertise("dvs_calibration/detected_points_left_or_single_pattern", 1);
+
+
   calibration_running_ = false;
   num_detections_ = 0;
 

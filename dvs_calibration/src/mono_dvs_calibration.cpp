@@ -126,6 +126,35 @@ void MonoDvsCalibration::addPattern(int id)
   object_points_.push_back(world_pattern_);
   num_detections_++;
 
+  //publish detection points
+  //can be used for rosbag recordings and inspect the detected points or
+  //to store them with rosbag and potentially play them back later, e.g. for calibration again
+  dvs_msgs::ImageObjectPointsPtr image_object_points_msg(new dvs_msgs::ImageObjectPoints());
+
+  dvs_msgs::Point2f image_point;
+  for (cv::Point2f pp : transition_maps_[id].pattern) {
+	  image_point.x = pp.x;
+	  image_point.y = pp.y;
+	  image_object_points_msg->image_points.push_back(image_point);
+  }
+  dvs_msgs::Point3f image_point3;
+    for (cv::Point3f pp : world_pattern_) {
+  	  image_point3.x = pp.x;
+  	  image_point3.y = pp.y;
+  	  image_point3.z = pp.z;
+  	  image_object_points_msg->object_points.push_back(image_point3);
+    }
+  detected_points_left_or_single_pub_.publish(image_object_points_msg);
+
+  //publish detection transition image for the detected points
+  cv_bridge::CvImage cv_image;
+  cv_image.encoding = "bgr8";
+  cv_image.image = transition_maps_[id].get_visualization_image().clone();
+
+  detected_points_left_or_single_pattern_pub_.publish(cv_image.toImageMsg());
+
+
+
   // compute and publish camera pose if camera is calibrated
   if (got_camera_info_)
   {
