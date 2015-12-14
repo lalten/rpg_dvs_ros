@@ -86,6 +86,14 @@ Example of an original image vs. undistored image:
 ![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/original-vs-undistored-image.svg)
 
 
+### Benchmark Idea
+
+The goal was to create an benchmark for the calibration and rectification result. Our requirements were to be reproducable and easy to perform. It should provide ground truth and according calculated depth data. This enables to calculate the 3D reproduction error.
+
+<!-- TODO: Why not use a reference IR-marker system? -->
+
+We propose to use a laser-cut high densitiy fiberboard construction to reproducibly move the LED board. The eDVS stereo setup is mounted on the construction. The board is moved on a z-Axis to fixed positions and snaps in. Then, the 3D position of the LEDs are measured with the eDVS. Afterwards, we calculate the distance (delta) between each 3D measurements. We also measure the ground-truth distances. Then, we compare the measured and ground-truth data in order to calculate the error. With this method we guarantee that the ground-truth data is the same for every run, even when the mounting position of the eDVS varies in the order of some millimeter.
+
 ### Learnings
 
 #### LED Board with too many blinking LEDs
@@ -103,8 +111,38 @@ Our solution is to use both (1) a statically mounted camera and (2) a fixed moun
 
 <!-- TODO: insert image of moving led pattern on board -->
 
+#### Wrong Buffering rejects Events
+The buffer in the original `eDVS.h` read all avalable bytes on the serial interface. Sometimes, the buffer ended in the middle of an event package. Then, it rejected the package, because it was incomplete. Our solution was to always read at least six bytes from the serial before we try to process it. 
 
+#### Original eDVS.h wihtout Timestamps
+The original `eDVS.h` did not provide timestampts. Hence, we implemented this functionality ourselvs. As we learned later, there is an improved version available at (edvstools)](https://github.com/Danvil/edvstools).
+
+#### Shifted X and Y Coordinates for On-Events
+Sometimes the sensor image shows shifted x and y values for on-events. The reason so far is not completely clear. We used the following quick-fix (while the calibration interface was running) in a seperate terminal:
+```
+#press hardware reset button on eDVS
+
+#send reset command
+$ echo -ne 'R\n!' > /dev/ttyUSB0
+
+#sometimes send reset event again, if it was not working
+#(you can check if the calibration interface still shows an image)
+#after the rest, it should not show any events anymore
+$ echo -ne 'R\n!' > /dev/ttyUSB0
+
+#set event mode to 1 and start sending events again
+$ echo -ne '!E1\nE+\n' > /dev/ttyUSB0
+#now your events should be displayed correctly
+```
+
+#### 
+
+
+### Ideas for Future Improvements
 
 #### Improve eDVS Ros Driver
 
 There already exists an improved version of the basic eDVS.h file, which was the starting point for the ros driver. Maybe one should evaluate, weather switching to the more recent version of [the library (edvstools)](https://github.com/Danvil/edvstools) is worthwile. 
+
+#### Buffering of Events
+In order to prevent event rejection, stop parsing the buffer if less than one complete package is available. Instead, read more data into the buffer. Then, continue processing. 
