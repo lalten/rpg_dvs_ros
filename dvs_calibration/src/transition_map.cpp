@@ -99,7 +99,12 @@ cv::Mat TransitionMap::get_visualization_image()
       int value = 255.0 - (log((double)transition_sum_map_[i][j] + 1)) / ((double)max_value) * 255.0;
       if(value > 255) value = 255;
       if(value < 0) value = 0;
-      image.at<cv::Vec3b>(j, i) = cv::Vec3b(value, value, value);
+
+      if(transition_sum_map_[i][j] >= params_.minimum_transitions_threshold)
+        image.at<cv::Vec3b>(j, i) = cv::Vec3b(0, 255-value, 0);
+      else
+        image.at<cv::Vec3b>(j, i) = cv::Vec3b(0, 0, 255-value);
+
     }
   }
 
