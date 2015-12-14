@@ -72,6 +72,8 @@ private:
   {
     GRAYSCALE, RED_BLUE, PINK_GREEN
   } display_method_;
+
+  double undistort_alpha;
 };
 
 } // namespace
