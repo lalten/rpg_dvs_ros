@@ -17,9 +17,17 @@ An eDVS (embedded Dynamic Vision Sensor) produces an event stream. Compared to a
 
 ### Software Setup
 
-Camera calibration and rectification is already done routinely for "normal", frame-based cameras. Therefore, there exist many tools to tackle the task. One of them is the open-source computer vision library [OpenCV](http://opencv.org/). Based on this library, the open source [Robot Operating System ROS](http://wiki.ros.org/camera_calibration) provides also a package, called [Camera Calibration](http://wiki.ros.org/camera_calibration).
-
-
 ### eDVS Driver for ROS
+
+
+
+### Results
+
+#### Intrinsic and Extrinsic Camera Parameters
+
+Example of an original image vs. undistored image:
+![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/original-vs-undistored-image.svg)
+
+Camera calibration and rectification is already done routinely for "normal", frame-based cameras. Therefore, there exist many tools to tackle the task. One of them is the open-source computer vision library [OpenCV](http://opencv.org/). Based on this library, the open source [Robot Operating System ROS](http://wiki.ros.org/camera_calibration) provides also a package, called [Camera Calibration](http://wiki.ros.org/camera_calibration).
 
 
