@@ -83,6 +83,8 @@ protected:
   virtual void startCalibration() = 0;
   virtual void saveCalibration() = 0;
 
+  void publishNumDetections();
+
 
   std::vector<cv::Point3f> world_pattern_;
   virtual void addPattern(int id) = 0;

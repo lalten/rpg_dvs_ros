@@ -35,6 +35,9 @@ MonoDvsCalibration::MonoDvsCalibration()
   camera_info_sub_ = nh_.subscribe("camera_info", 1, &MonoDvsCalibration::cameraInfoCallback, this);
   got_camera_info_ = false;
   camera_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("dvs_calibration/pose", 1);
+
+  image_object_points_sub_ = nh_.subscribe("dvs_calibration/image_object_points", 1,
+		  	  	  	  	  	  	  &MonoDvsCalibration::imageObjectPointsCallback, this);
 }
 
 void MonoDvsCalibration::calibrate()
@@ -122,11 +125,6 @@ void MonoDvsCalibration::saveCalibration()
 
 void MonoDvsCalibration::addPattern(int id)
 {
-  // add detection
-  image_points_.push_back(transition_maps_[id].pattern);
-  object_points_.push_back(world_pattern_);
-  num_detections_++;
-
   publishAddedPattern(id, detected_points_left_or_single_pub_,
 		  detected_points_left_or_single_pattern_pub_, transition_maps_[id].pattern,
 		  transition_maps_[id].get_visualization_image());
@@ -162,6 +160,43 @@ void MonoDvsCalibration::addPattern(int id)
 
     camera_pose_pub_.publish(pose_msg);
   }
+}
+
+void MonoDvsCalibration::imageObjectPointsCallback(dvs_msgs::ImageObjectPoints msg)
+{
+  ROS_INFO("imageObjectPointsCallback");
+
+  //convert message to point2f vector
+  std::vector<cv::Point2f> left;
+
+  cv::Point2f image_point;
+  for (dvs_msgs::Point2f pp : msg.image_points) {
+	  image_point.x = pp.x;
+	  image_point.y = pp.y;
+	  left.push_back(image_point);
+  }
+
+  // add detection
+  image_points_.push_back(left);
+
+  //convert message to point3f vector
+  std::vector<cv::Point3f> object_points;
+
+  cv::Point3f object_point;
+  for (dvs_msgs::Point3f pp : msg.object_points) {
+	  object_point.x = pp.x;
+	  object_point.y = pp.y;
+	  object_point.z = pp.z;
+	  object_points.push_back(object_point);
+  }
+
+  // add object points only for left callback
+  // are the same for the right callback
+  object_points_.push_back(object_points);
+  num_detections_++;
+
+  //update publisher
+  publishNumDetections();
 }
 
 void MonoDvsCalibration::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg)

@@ -51,8 +51,23 @@ DvsCalibration::DvsCalibration()
 }
 
 void DvsCalibration::publishAddedPattern(const int id, ros::Publisher &detected_points_pub,
-		image_transport::Publisher &detected_points_patttern_pub, std::vector<cv::Point2f> image_point_v, cv::Mat image_pattern)
+		image_transport::Publisher &detected_points_pattern_pub, std::vector<cv::Point2f> image_point_v, cv::Mat image_pattern)
 {
+
+  //IMPORTANT: Always publish the image first, so we can analyze the points based on the image
+  //which we can already display, because it was sent before
+  //publish detection transition image for the detected points
+
+  std_msgs::Header head;
+  head.stamp = ros::Time::now();
+  cv_bridge::CvImage cv_image;
+  cv_image.header = head;
+  cv_image.encoding = "bgr8";
+  cv_image.image = image_pattern.clone();
+
+  detected_points_pattern_pub.publish(cv_image.toImageMsg());
+
+
   //publish detection points
   //can be used for rosbag recordings and inspect the detected points or
   //to store them with rosbag and potentially play them back later, e.g. for calibration again
@@ -71,14 +86,15 @@ void DvsCalibration::publishAddedPattern(const int id, ros::Publisher &detected_
 	  image_point3.z = pp.z;
 	  image_object_points_msg.object_points.push_back(image_point3);
 	}
+	image_object_points_msg.header.stamp = ros::Time::now();
 	detected_points_pub.publish(image_object_points_msg);
+}
 
-  //publish detection transition image for the detected points
-  cv_bridge::CvImage cv_image;
-  cv_image.encoding = "bgr8";
-  cv_image.image = image_pattern.clone();
-
-  detected_points_patttern_pub.publish(cv_image.toImageMsg());
+void DvsCalibration::publishNumDetections()
+{
+	std_msgs::Int32 msg;
+	msg.data = num_detections_;
+	num_detections_pub_.publish(msg);
 }
 
 void DvsCalibration::eventsCallback(const dvs_msgs::EventArray::ConstPtr& msg, int camera_id)
@@ -95,11 +111,10 @@ void DvsCalibration::eventsCallback(const dvs_msgs::EventArray::ConstPtr& msg, i
     ROS_DEBUG("Try to find pattern");
     if (transition_maps_[camera_id].has_pattern()) {
       ROS_DEBUG("Found pattern.");
+
       addPattern(camera_id);
 
-      std_msgs::Int32 msg;
-      msg.data = num_detections_;
-      num_detections_pub_.publish(msg);
+      publishNumDetections();
 
       updateVisualization(camera_id);
 

@@ -43,10 +43,26 @@ StereoDvsCalibration::StereoDvsCalibration()
   image_transport::ImageTransport it(nh_);
   visualization_left_pub_ = it.advertise("dvs_calibration/visualization_left", 1);
   visualization_right_pub_ = it.advertise("dvs_calibration/visualization_right", 1);
+
+  image_object_points_left_sub_ = nh_.subscribe("image_object_points_left", 1,
+		  	  	  	  	  	  	  &StereoDvsCalibration::imageObjectPointsLeftCallback, this);
+
+  image_object_points_right_sub_ = nh_.subscribe("image_object_points_right", 1,
+		  	  	  	  	  	  	  &StereoDvsCalibration::imageObjectPointsRightCallback, this);
 }
 
 void StereoDvsCalibration::calibrate()
 {
+  // send output
+  std::ostringstream output;
+
+  if(image_points_left_.size() != image_points_right_.size()) {
+	  ROS_ERROR("number of detected patterns for left and right camera do not match!");
+
+	  output << "ERROR:" << std::endl;
+	  output << "number of detected patterns for left and right camera do not match!" << std::endl;
+  }
+
   cv::Mat distCoeffsLeft(1, 5, CV_64F);
   cv::Mat distCoeffsRight(1, 5, CV_64F);
   cv::Mat cameraMatrixLeft(3, 3, CV_64F);
@@ -83,8 +99,7 @@ void StereoDvsCalibration::calibrate()
     camera_info_right_.P[i] = P2.at<double>(i);
   }
 
-  // send output
-  std::ostringstream output;
+
   output << "Calibration result" << std::endl;
   output << "Reprojection error: " << std::setprecision(5) << reproj_error << std::endl;
 
@@ -232,16 +247,65 @@ void StereoDvsCalibration::addPattern(int id)
 void StereoDvsCalibration::addStereoPattern(std::vector<cv::Point2f> left, std::vector<cv::Point2f> right,
 		cv::Mat image_pattern_left, cv::Mat image_pattern_right)
 {
-  // add detection
-  image_points_left_.push_back(left);
-  image_points_right_.push_back(right);
-  object_points_.push_back(world_pattern_);
-  num_detections_++;
-
+  //publish detection
   publishAddedPattern(left_camera_id, detected_points_left_or_single_pub_,
 		  detected_points_left_or_single_pattern_pub_, left, image_pattern_left);
   publishAddedPattern(right_camera_id, detected_points_right_pub_,
 		  detected_points_right_pattern_pub_, right, image_pattern_right);
+}
+
+void StereoDvsCalibration::imageObjectPointsLeftCallback(dvs_msgs::ImageObjectPoints msg)
+{
+  ROS_INFO("imageObjectPointsLeftCallback");
+
+  //convert message to point2f vector
+  std::vector<cv::Point2f> left;
+
+  cv::Point2f image_point;
+  for (dvs_msgs::Point2f pp : msg.image_points) {
+	  image_point.x = pp.x;
+	  image_point.y = pp.y;
+	  left.push_back(image_point);
+  }
+
+  // add detection
+  image_points_left_.push_back(left);
+
+  //convert message to point3f vector
+  std::vector<cv::Point3f> object_points;
+
+  cv::Point3f object_point;
+  for (dvs_msgs::Point3f pp : msg.object_points) {
+	  object_point.x = pp.x;
+	  object_point.y = pp.y;
+	  object_point.z = pp.z;
+	  object_points.push_back(object_point);
+  }
+
+  // add object points only for left callback
+  // are the same for the right callback
+  object_points_.push_back(object_points);
+  num_detections_++;
+
+  //update publisher
+  publishNumDetections();
+}
+
+void StereoDvsCalibration::imageObjectPointsRightCallback(dvs_msgs::ImageObjectPoints msg)
+{
+
+  //convert message to point2f vector
+  std::vector<cv::Point2f> left;
+
+  cv::Point2f image_point;
+  for (dvs_msgs::Point2f pp : msg.image_points) {
+	  image_point.x = pp.x;
+	  image_point.y = pp.y;
+	  left.push_back(image_point);
+  }
+
+  // add detection
+  image_points_right_.push_back(left);
 }
 
 void StereoDvsCalibration::updateVisualization(int id)
