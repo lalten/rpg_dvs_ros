@@ -84,6 +84,9 @@ The eDVS driver for ROS is based on an [EDVS.h file from NST TUM](https://wiki.l
 Example of an original image vs. undistorted image:
 ![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/original-vs-undistored-image.svg)
 
+Visualization of eDVS lens distortion using our Matlab [script](doc/scripts/distortion.m).
+<br/><img src="https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/distortion.svg" height="500px"/>
+
 
 ### Benchmark Idea
 
