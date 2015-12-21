@@ -7,7 +7,6 @@ import Tkinter
 import tkMessageBox
 import ImageTk
 import Image as Imagepy
-
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
@@ -95,10 +94,6 @@ class Picker(object):
         
         self.lastImage = data
 
-        #if we already got some objects points, we are free to go
-        if self.lastImageOjectPoints is not False:
-            #now we have both, block until a decision is made
-            self.nowWaitForDecision()
 
     def showImage(self):
         if self.lastImage is not False:
@@ -153,6 +148,10 @@ class Picker(object):
             self.ignoreData()
             return
 
+        #we got an image, that is not too long ago
+        #so perfect, lets go
+        #and hope, they belong toegther
+        self.nowWaitForDecision()
 
         #store data
         self.lastImageOjectPoints = data
