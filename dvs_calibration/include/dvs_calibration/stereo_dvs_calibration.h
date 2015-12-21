@@ -72,8 +72,10 @@ private:
   ros::ServiceClient set_camera_info_left_client_, set_camera_info_right_client_;
 
   // buffer to wait for other camera
-  void addStereoPattern(std::vector<cv::Point2f> left, std::vector<cv::Point2f> right);
+  void addStereoPattern(std::vector<cv::Point2f> left, std::vector<cv::Point2f> right,
+			cv::Mat image_pattern_left, cv::Mat image_pattern_right);
   std::vector<cv::Point2f> image_point_buffer_;
+  cv::Mat image_pattern_buffer;
   bool has_left_buffer_, has_right_buffer_;
   ros::Time buffer_time_;
 

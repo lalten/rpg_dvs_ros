@@ -187,7 +187,8 @@ void StereoDvsCalibration::addPattern(int id)
       ROS_INFO("pattern from left camera");
       if (has_right_buffer_) {
         if (ros::Time::now() - buffer_time_ < stereo_max_buffer_time_difference) {
-          addStereoPattern(transition_maps_[left_camera_id].pattern, image_point_buffer_);
+          addStereoPattern(transition_maps_[left_camera_id].pattern, image_point_buffer_,
+        		  transition_maps_[left_camera_id].get_visualization_image(), image_pattern_buffer);
           ROS_INFO("Added detection!");
         }
         else {
@@ -198,6 +199,7 @@ void StereoDvsCalibration::addPattern(int id)
         // add to buffer
         buffer_time_ = ros::Time::now();
         image_point_buffer_ = transition_maps_[left_camera_id].pattern;
+        image_pattern_buffer = transition_maps_[left_camera_id].get_visualization_image();
         has_left_buffer_ = true;
       }
     }
@@ -205,7 +207,8 @@ void StereoDvsCalibration::addPattern(int id)
       ROS_INFO("pattern from right camera");
       if (has_left_buffer_) {
         if (ros::Time::now() - buffer_time_ < stereo_max_buffer_time_difference) {
-          addStereoPattern(image_point_buffer_, transition_maps_[right_camera_id].pattern);
+          addStereoPattern(image_point_buffer_, transition_maps_[right_camera_id].pattern,
+        		  image_pattern_buffer, transition_maps_[right_camera_id].get_visualization_image());
           ROS_INFO("Added detection!");
         }
         else {
@@ -216,6 +219,7 @@ void StereoDvsCalibration::addPattern(int id)
         // add to buffer
         buffer_time_ = ros::Time::now();
         image_point_buffer_ = transition_maps_[right_camera_id].pattern;
+        image_pattern_buffer = transition_maps_[right_camera_id].get_visualization_image();
         has_right_buffer_ = true;
       }
     }
@@ -225,13 +229,19 @@ void StereoDvsCalibration::addPattern(int id)
   }
 }
 
-void StereoDvsCalibration::addStereoPattern(std::vector<cv::Point2f> left, std::vector<cv::Point2f> right)
+void StereoDvsCalibration::addStereoPattern(std::vector<cv::Point2f> left, std::vector<cv::Point2f> right,
+		cv::Mat image_pattern_left, cv::Mat image_pattern_right)
 {
   // add detection
   image_points_left_.push_back(left);
   image_points_right_.push_back(right);
   object_points_.push_back(world_pattern_);
   num_detections_++;
+
+  publishAddedPattern(left_camera_id, detected_points_left_or_single_pub_,
+		  detected_points_left_or_single_pattern_pub_, left, image_pattern_left);
+  publishAddedPattern(right_camera_id, detected_points_right_pub_,
+		  detected_points_right_pattern_pub_, right, image_pattern_right);
 }
 
 void StereoDvsCalibration::updateVisualization(int id)
