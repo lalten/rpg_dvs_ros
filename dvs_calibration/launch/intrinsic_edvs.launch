@@ -18,7 +18,14 @@
     <remap from="events" to="/dvs/events" />
     <remap from="camera_info" to="/dvs/camera_info" />
     <remap from="set_camera_info" to="/dvs/set_camera_info" />
-
+    
+    <!-- in order to simply take all detected patterns -->
+    <!--
+    <remap from="dvs_calibration/image_object_points" to="/dvs_calibration/detected_points_left_or_single" />
+	-->
+	<!-- use output of picker tool for calibration input -->
+	<remap from="dvs_calibration/image_object_points" to="out/image_object_points" />
+	
     <param name="blinking_time_us" value="1000" />
     <param name="blinking_time_tolerance_us" value="100" />
     <!-- enough transitions to start to try to find a pattern -->
@@ -34,8 +41,14 @@
     <param name="dots_h" value="3"/>
     <!-- distance of the dots in m -->
     <param name="dot_distance" value="0.04"/>
+    
   </node>
 
   <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui" args="--perspective-file $(find dvs_calibration_gui)/rqt/IntrinsicCalibration.perspective" />
 
+  <!-- pattern picker to confirm detections -->
+  <node name="pattern_picker" pkg="dvs_calibration" type="pick.py">
+	  <remap from="in/image_object_points" to="/dvs_calibration/detected_points_left_or_single" />
+	  <remap from="in/image_pattern" to="/dvs_calibration/detected_points_left_or_single_pattern" />
+  </node>
 </launch>

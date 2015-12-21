@@ -20,6 +20,14 @@
     <remap from="events_right" to="/dvs_right/events" />
     <remap from="set_camera_info_left" to="/dvs_left/set_camera_info" />
     <remap from="set_camera_info_right" to="/dvs_right/set_camera_info" />
+    
+    <!-- in order to simply take all detected patterns -->
+    <!--
+    <remap from="image_object_points_left" to="/dvs_calibration/detected_points_left_or_single" />
+	-->
+	<!-- use output of picker tool for calibration input -->
+	<remap from="image_object_points_left" to="/dvs_left/out/image_object_points" />
+	<remap from="image_object_points_right" to="/dvs_right/out/image_object_points" />
 
     <param name="blinking_time_us" value="1000" />
     <param name="blinking_time_tolerance_us" value="100" />
@@ -40,4 +48,19 @@
 
   <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui" args="--perspective-file $(find dvs_calibration_gui)/rqt/StereoCalibration.perspective" />
 
+
+  <!-- pattern picker to confirm detections -->
+  <node name="pattern_picker" pkg="dvs_calibration" type="pick.py" output="screen" ns="dvs_left">
+	  <remap from="in/image_object_points" to="/dvs_calibration/detected_points_left_or_single" />
+	  <remap from="in/image_pattern" to="/dvs_calibration/detected_points_left_or_single_pattern" />
+  </node>
+  
+    <!-- pattern picker to confirm detections -->
+  <node name="pattern_picker" pkg="dvs_calibration" type="pick.py" output="screen" ns="dvs_right">
+	  <remap from="in/image_object_points" to="/dvs_calibration/detected_points_right" />
+	  <remap from="in/image_pattern" to="/dvs_calibration/detected_points_right_pattern" />
+	  <param name="stereoslave" value="1" />
+	  <remap from="in/ignore" to="/dvs_left/out/ignore" />
+	  <remap from="in/take" to="/dvs_left/out/take" />
+  </node>
 </launch>
