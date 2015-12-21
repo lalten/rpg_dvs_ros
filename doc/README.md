@@ -154,7 +154,7 @@ We propose to use a laser-cut high density fiberboard construction to reproducib
 At the beginning we experimented with an LED board with 80 LEDs (200Hz), which produced too many events. We discovered, that the eDVS can not cope with so many events (even at 4MBit data rate). On the other hand, the DVS (not eDVS) has no problem with that many events. In our experience the DVS usually reports about five times as many events from the same scene.
 
 #### Reflection from LED Board
-<!-- TODO: provide image -->
+![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/reflection.svg)
 LEDs near to the border of the board reflected too strongly, which had a negative influence on pattern detection. We experimented with some textile to absorb the reflections. The result was surprisingly good. Yet, for our final solution, we disable the LEDs at the border to achieve the same detection quality without depending on covers.
 
 #### Movements during Calibration Process
