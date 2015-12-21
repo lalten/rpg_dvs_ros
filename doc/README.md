@@ -150,11 +150,13 @@ We propose to use a laser-cut high density fiberboard construction to reproducib
 ### Learnings
 
 #### LED Board with too many blinking LEDs
-<!-- TODO: provide image of led board with all LEDs on -->
 At the beginning we experimented with an LED board with 80 LEDs (200Hz), which produced too many events. We discovered, that the eDVS can not cope with so many events (even at 4MBit data rate). On the other hand, the DVS (not eDVS) has no problem with that many events. In our experience the DVS usually reports about five times as many events from the same scene.
 
+With a lot of additional light (to surpress noise) and 10.0s transition map aggregation time, even the full board could be detected in the end. The big number of points makes the calculation of the principal point more accurate. However it is very difficult to get all LEDs to be detected without too much noise.
+<br/><img src="images/full_board_detection.jpg" height="300px"/><img src="images/full_board_detection_scrot.png" height="300px"/>
+
 #### Reflection from LED Board
-![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/reflection.svg)
+<img src="https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/reflection.svg" height="300px"/><br/>
 LEDs near to the border of the board reflected too strongly, which had a negative influence on pattern detection. We experimented with some textile to absorb the reflections. The result was surprisingly good. Yet, for our final solution, we disable the LEDs at the border to achieve the same detection quality without depending on covers.
 
 #### Movements during Calibration Process
