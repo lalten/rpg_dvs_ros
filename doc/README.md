@@ -115,6 +115,10 @@ Our solution is to use both (1) a statically mounted camera and (2) a fixed led 
 
 ![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/led-board-moving-pattern.svg)
 
+In our animation of pattern recognition you can observe how (1) the pattern shifts over the board and (2) how pixel coordinates of the same pattern points vary relatively little (about +- 0.3px max), because no movement is introduced.
+
+![Image](images/patterns_small.gif)
+
 #### Wrong Buffering rejects Events
 The buffer in the original `eDVS.h` read all available bytes on the serial interface. Sometimes, the buffer ended in the middle of an event package. Then, it rejected the package, because it was incomplete. Our solution was to always read at least six bytes from the serial before we try to process it. 
 
