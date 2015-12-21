@@ -6,6 +6,9 @@ from dvs_msgs.msg import ImageObjectPoints
 import Tkinter
 import tkMessageBox
 
+import cv2
+from cv_bridge import CvBridge, CvBridgeError
+from sensor_msgs.msg import Image
 
 
 class Picker(object):
@@ -19,18 +22,39 @@ class Picker(object):
     def __init__(self):
         self.imageObjectPointsPub = rospy.Publisher('out/image_object_points', ImageObjectPoints, queue_size=10)
         self.lastImageOjectPoints = ImageObjectPoints()
-        self.lastPattern = 0
+        self.lastImage = False
+
+        self.title = rospy.get_namespace() + ' - ' + rospy.get_name()
+
+        cv2.namedWindow(self.title, 1)
 
     def startListener(self):
-        rospy.Subscriber("in/image_object_points", ImageObjectPoints, self.callback)
+        self.points_sub = rospy.Subscriber("in/image_object_points", \
+                ImageObjectPoints, self.pointsCallback)
 
-        # spin() simply keeps python from exiting until this node is stopped
-        rospy.spin()
+        self.bridge = CvBridge()
+        self.image_sub = rospy.Subscriber("in/image_pattern",Image,self.imageCallback)
 
-    def callback(self,data):
+
+    def imageCallback(self,data):
+        rospy.loginfo(rospy.get_caller_id() + "I got an image")
+        try:
+            self.lastImage = self.bridge.imgmsg_to_cv2(data, "bgr8")
+        except CvBridgeError as e:
+            print(e)
+
+
+    def pointsCallback(self,data):
         self.lastImageOjectPoints = data
         rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.image_points)
-        self.scatterplot(data.image_points)
+        #self.scatterplot(data.image_points)
+
+        #show last image
+        cv2.imshow(self.title, self.lastImage)
+        #do not wait at all
+        cv2.waitKey(1)
+
+        #ask if we want to take that pattern
         self.askTakeIt()
 
     def takeData(self):
@@ -38,7 +62,7 @@ class Picker(object):
         self.imageObjectPointsPub.publish(self.lastImageOjectPoints)
 
     def askTakeIt(self):
-        answer = tkMessageBox.askyesno('Verify Pattern', 'Do you want to use this detected pattern for calibration?')
+        answer = tkMessageBox.askyesno(self.title, 'Do you want to use this detected pattern for calibration?')
         if answer:
             self.takeData()
             #tkMessageBox.showinfo('No', 'Quit has been cancelled')
@@ -66,7 +90,7 @@ class Picker(object):
         #TODO: not working yet
         colors = (100 * random.random()) * np.ones(len(x))
 
-        print("colors are",colors)
+        plt.title(self.title)
         plt.scatter(x, y, c=colors, alpha=0.5)
         
         #make interactive plot, so it is nonblocking
@@ -76,11 +100,18 @@ class Picker(object):
         #so we add up the examples
         plt.show()
 
-if __name__ == '__main__':
+def main():
+    rospy.init_node('picker', anonymous=True)
+    p = Picker()
+    p.startListener()
     try:
-        #talker()
-        rospy.init_node('picker', anonymous=True)
-        p = Picker()
-        p.startListener()
+        # spin() simply keeps python from exiting until this node is stopped
+        rospy.spin()
+    except KeyboardInterrupt:
+        print("shutting down")
     except rospy.ROSInterruptException:
         pass
+    cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    main()
