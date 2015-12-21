@@ -2,9 +2,6 @@
 
 Part of this project was contributed within the scope of a practical course at the TUM NST. This document is the final project report.
 
-#Calibration Setup for Stereo DVS
-### Practical Course
-
 The following sections will give a precise overview of the project goal, problems and insights which we gained while developing a solution.
 
 ## Project Goal
@@ -15,14 +12,14 @@ In order to extract depth information from a camera stereo setup, most methods n
 
 An eDVS (embedded Dynamic Vision Sensor) produces an event stream. Compared to a usual frame-based camera, the eDVS produces an event every time a pixel changes. This key difference enables for example very fast feedback cycles (<5ms). The used  so-called silicon retina chips are developed by the [The Institute of Neuroinformatics Zürich](https://www.ini.uzh.ch/), which also provides [further information](http://siliconretina.ini.uzh.ch/wiki/index.php). In our project we used the miniaturized [eDVS](https://wiki.lsr.ei.tum.de/nst/programming/edvsgettingstarted).
 
-### Software Setup
+## Software Setup
 
-#### Existing Software as Starting Point
+### Existing Software as Starting Point
 Camera calibration and rectification is already done routinely for "normal", frame-based cameras. Therefore, there exist many tools to tackle the task. One of them is the open-source computer vision library [OpenCV](http://opencv.org/). Based on this library, the open source [Robot Operating System (ROS)](http://wiki.ros.org/camera_calibration) provides a package, called [Camera Calibration](http://wiki.ros.org/camera_calibration). It helps to facilitate the calibration process of &bdquo;monocular or stereo cameras using a checkerboard calibration target&ldquo; <sup>[1](http://wiki.ros.org/camera_calibration)</sup>. Unfortunately, it is only for frame-based cameras. For that reason, the [Robotics and Perception Group of Zurich](http://rpg.ifi.uzh.ch/) published another open-source package for ROS called [rpg_dvs_ros](https://github.com/uzh-rpg/rpg_dvs_ros). The software tries to use existing parts of the camera_calibration package and OpenCV again. 
 
 Instead of trying to reinvent the wheel again, we think the best approach is to build upon proven existing software. Therefore, this project uses the rpg_dvs_ros  package as starting point. We forked the original repository in order to implement and add our new features. 
 
-#### eDVS Driver for ROS
+### eDVS Driver for ROS
 
 The rpg_dvs_ros package (DVS_ROS) expects a rostopic input stream of the format `dvs::EventArray`. The eDVS on the other hand provides the event stream using its own custom protocol. The used communication channel is an emulated serial device over UART. Further details provides the [IniLabs eDVS guide](http://inilabs.com/support/hardware/edvs/) as well as the [Silicon Retina Wiki of the INI Zurich](http://siliconretina.ini.uzh.ch/wiki/index.php). After connecting the eDVS camera over USB to a Linux computer, an emulated serial device usually called `/dev/ttyUSB0` will be created (since udev 2.5, you can also access a device using its persistent name `/dev/serial/by-id/usb-FTDI_Dual_RS232-HS-if00-port0`). Using the console, one can send and receive commands on the interface, for example as illustrated below:
 
@@ -77,14 +74,64 @@ The eDVS driver for ROS is based on an [EDVS.h file from NST TUM](https://wiki.l
 - reset timestamps on sensors
 - provide sensor information, e.g. resolution.
 
-### Results
+## Calibration Walkthrough
+1. Setup
+  * Set up your software environment. The process is explained in detail in the [Installation section of the reposistory's README.md](../README.md#driver-installation).
+    * Install necessary prerequisites ([ROS](http://www.ros.org/), [catkin_simple](https://github.com/catkin/catkin_simple.git), [libcaer](https://svn.code.sf.net/p/jaer/code/libcaer/trunk/), libusb-1.0-0-dev)
+    * Check out this repository
+    * Build it. 
+  * Set up your LED board.
+    * We provide some documentation and the firmware for our board at our [ledboard repository](https://github.com/lalten/ledboard/tree/dynamic).
+    * If you want to follow our recommendation to use the fixed calibration rig, mount eDVS cameras and LED board on it.
+    * Connect cameras to computer and verify access rights with `$ echo R > /dev/ttyUSB0` (logging out and in might help)
+* Calibrate in [mono mode](../README.md#dvs-calibration)) to find intrinsic parameters of the first camera.
+  * Bring up the *mono* calibration GUI: `$ roslaunch dvs_calibration intrinsic_edvs.launch`
+    * Make sure the camera image rendering (bottom left) looks good
+    * All LED blobs are visible
+    * No or very little [reflection](#reflection-from-led-board)
+    * X/Y is correct for both on and off ([workaround](#shifted-x-and-y-coordinates-for-on-events))
+  * See if the LED pattern recognition (visualization at bottom center) works
+    * LEDs blinking with correct frequency show up as green dots (adjust [blink time and tolerance](#))
+    * LED blob borders and reflections are red (adjust [threshold](#))
+    * Recognized pattern is drawn over led blobs (adjust [pattern width/height](#))
+  * Record calibration pattern data
+    * Start fresh by pressing the /Reset/ button in top left panel (might need to resize window)
+    * Successful pattern recognitions increment counter in top left
+    * Don't move [too much](#movements-during-calibration-process)
+    * Try to capture enough patterns close to image edges, because lens distortion increases radially. Check "Capture Images" at MathWorks's single camera [calibration documentation](http://de.mathworks.com/help/vision/ug/single-camera-calibrator-app.html#bt19jdq-1).
+    * Capture something like 40 patterns
+  * Calculate and save intrinsic calibration
+    * Hit the *Start Calibration* button to start calculations (this freezes rqt).
+    * If the parameters seem OK, you can save them. The path will be `~/.ros/camera_info/eDVS128-_dev_ttyUSB0.yaml` (if your camera is on /dev/ttyUSB0).
+    * Inspect the undistortion result quality in the lower right image view. ([example](#intrinsic-and-extrinsic-camera-parameters))
+    * You could also use a Matlab [script](scripts/distortion.m) to visualize distortion in a quiver plot.
+  * Repeat for the second camera (use `$ roslaunch dvs_calibration intrinsic_edvs_usb1.launch`)
+* Calibrate in [stereo mode](../README.md#stereo-dvs-calibration)
+  * Make sure you have intrinsic parameters for the left and right camera in `~/.ros/camera_info/eDVS128-_dev_ttyUSB0.yaml` and `~/.ros/camera_info/eDVS128-_dev_ttyUSB1.yaml`, respectively.
+  * Start the stereo calibration GUI: `$ roslaunch dvs_calibration stereo_edvs.launch`
+  * Record patterns as you did in mono mode (Patterns are stored if they appear in both cameras simultaneously)
+  * *Start Calibration* and *Save Calibration* (The .yaml files will be overwritten)
+  
+<!-- TODO: provide screenshots -->
 
-#### Intrinsic and Extrinsic Camera Parameters
+
+### Shortcut if you just want to use calibration files in ROS
+<!-- TODO -->
+
+### Calibration Tweaks
+See [Calibration Details and Parameters](../README.md#calibration-details-and-parameters).
+<!-- TODO -->
+* Use the tool that displays last detection
+* Use the tool that asks for approval every time a pattern is detected
+
+## Results
+
+### Intrinsic and Extrinsic Camera Parameters
 
 Example of an original image vs. undistorted image:
 ![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/original-vs-undistored-image.svg)
 
-Visualization of eDVS lens distortion using our Matlab [script](doc/scripts/distortion.m).
+Visualization of eDVS lens distortion using our Matlab [script](scripts/distortion.m).
 <br/><img src="https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/distortion.svg" height="500px"/>
 
 
@@ -143,14 +190,14 @@ $ echo -ne '!E1\nE+\n' > /dev/ttyUSB0
 #now your events should be displayed correctly
 ```
 
-#### 
+## Ideas for Future Improvements
 
-
-### Ideas for Future Improvements
-
-#### Improvements to eDVS Ros Driver
+### Improvements to eDVS Ros Driver
 
 There already exists an improved version of the basic EDVS.h file, which was the starting point for the ROS driver. This early EDVS.h is very limited in functionality. Further efforts regarding the eDVS calibration topic should consider switching to the most recent version of [the library (edvstools)](https://github.com/Danvil/edvstools).
 
-#### Buffering of Events
-In order to prevent event rejection, stop parsing the buffer if less than one complete package is available. Instead, read more data into the buffer. Then, continue processing. 
+### Buffering of Events
+In order to prevent event rejection, stop parsing the buffer if less than one complete package is available. Instead, read more data into the buffer. Then, continue processing.
+
+
+ 
