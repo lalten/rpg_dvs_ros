@@ -84,7 +84,7 @@ The eDVS driver for ROS is based on an [EDVS.h file from NST TUM](https://wiki.l
     * We provide some documentation and the firmware for our board at our [ledboard repository](https://github.com/lalten/ledboard/tree/dynamic).
     * If you want to follow our recommendation to use the fixed calibration rig, mount eDVS cameras and LED board on it.
     * Connect cameras to computer and verify access rights with `$ echo R > /dev/ttyUSB0` (logging out and in might help)
-* Calibrate in [mono mode](../README.md#dvs-calibration)) to find intrinsic parameters of the first camera.
+* Calibrate in [mono mode](../README.md#dvs-calibration) to find intrinsic parameters of the first camera.
   * Bring up the *mono* calibration GUI: `$ roslaunch dvs_calibration intrinsic_edvs.launch`
     * Make sure the camera image rendering (bottom left) looks good
     * All LED blobs are visible
@@ -106,6 +106,10 @@ The eDVS driver for ROS is based on an [EDVS.h file from NST TUM](https://wiki.l
     * Inspect the undistortion result quality in the lower right image view. ([example](#intrinsic-and-extrinsic-camera-parameters))
     * You could also use a Matlab [script](scripts/distortion.m) to visualize distortion in a quiver plot.
   * Repeat for the second camera (use `$ roslaunch dvs_calibration intrinsic_edvs_usb1.launch`)
+  
+  Screenshot of mono calibration:
+  <br/><img src="images/calibration-gui-mono.png" height="520px"/>
+  
 * Calibrate in [stereo mode](../README.md#stereo-dvs-calibration)
   * Make sure you have intrinsic parameters for the left and right camera in `~/.ros/camera_info/eDVS128-_dev_ttyUSB0.yaml` and `~/.ros/camera_info/eDVS128-_dev_ttyUSB1.yaml`, respectively.
   * Start the stereo calibration GUI: `$ roslaunch dvs_calibration stereo_edvs.launch`
