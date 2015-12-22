@@ -42,6 +42,8 @@ EDVS_Driver::EDVS_Driver(std::string edvs_port, bool master) {
 
   integratedTimeSinceReset = 0;
 
+  last_timestamp = 0;
+
   Edvs::EventCallbackType cbf = boost::bind(&EDVS_Driver::callback, this, _1);
 
   device_mutex.lock();
@@ -94,9 +96,13 @@ void EDVS_Driver::callback(const std::vector<Edvs::Event>& events) {
   event_buffer_mutex.lock();
 
   for (std::vector<Edvs::Event>::const_iterator i=events.begin(); i<events.end(); ++i) {
-    integratedTimeSinceReset += i->time_delta;
-    Event e {i->x, i->y, i->polarity, integratedTimeSinceReset};
+	if(i->time_delta < last_timestamp) {
+		integratedTimeSinceReset += last_timestamp;
+	}
+    Event e {i->x, i->y, i->polarity, integratedTimeSinceReset + i->time_delta};
   	event_buffer.push_back(e);
+
+  	last_timestamp = i->time_delta;
   	//std::cout << "Event from "<<camera_id<<": <x, y, t, p> = <" << e.x << ",\t" << e.y << ",\t" << e.timestamp << ",\t" << e.polarity << ">" << std::endl;
   }
 
