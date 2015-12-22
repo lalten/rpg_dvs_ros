@@ -137,6 +137,11 @@ class Picker(object):
             rospy.loginfo(rospy.get_caller_id() + "ignore points (waiting for decision)")
             return
 
+        if self.lastImage is False:
+            rospy.loginfo(rospy.get_caller_id() + "did not yet receive an image")
+            return
+
+
         #check if time difference to image is too large
         #image should always come before points
         me = data.header.stamp
@@ -163,14 +168,17 @@ class Picker(object):
     def nowWaitForDecision(self):
         self.waitingForDecision = True
         self.labelWaitStr.set('waiting for decision')
-        self.addButton.config(state="normal")
-        self.ignoreButton.config(state="normal")
+
+        if self.isStereoSlave is not True:
+            self.addButton.config(state="normal")
+            self.ignoreButton.config(state="normal")
 
     def stopWaitingForDecision(self):
         self.waitingForDecision = False
 
-        self.addButton.config(state="disabled")
-        self.ignoreButton.config(state="disabled")
+        if self.isStereoSlave is not True:
+            self.addButton.config(state="disabled")
+            self.ignoreButton.config(state="disabled")
 
         #reset to false, so wait until we got object points
         #followed by an image
