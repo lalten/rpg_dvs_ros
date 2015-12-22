@@ -195,7 +195,7 @@ namespace Edvs
 	struct Event {
 		uint8_t x, y;
 		bool polarity;
-		uint32_t time_delta; // in us
+		uint64_t time_delta; // in us
 	};
 
 	/** Type of event callback function */
@@ -220,7 +220,7 @@ namespace Edvs
 				if(running_) {
 					throw "Already running!";
 				}
-				device_.WriteCommand("!E1\n");
+				device_.WriteCommand("!E2\n");
 				device_.WriteCommand("E+\n");
 				running_ = true;
 				thread_ = boost::thread(&Edvs::Impl::EventCapture::Run, this);
@@ -251,7 +251,7 @@ namespace Edvs
 					buffA->clear();
 
 					// keep code below simple, but also prevent segmentation faults
-					if(bytes_read < 6)
+					if(bytes_read < 4)
 					{
 					  // we might lose some bytes, so packets might need to be dropped
 					  lastByteInBufferWasValid = false;
@@ -262,49 +262,37 @@ namespace Edvs
 					}
 
 					size_t buffer_offset = 0;
-					while(buffer_offset < bytes_read) {
+					while(buffer_offset < (bytes_read - 4)) {
 
-						// Skip bytes until we have the second of two "MSB-positive" bytes in a row
-						if (! lastByteInBufferWasValid) {
-							lastByteInBufferWasValid = buffer[buffer_offset++] & 0x80;
+						uint8_t a = buffer[buffer_offset++];
+
+						//check if first byte is 1
+						if(!(a& 0x80)) {
+
 #ifdef VERBOSE
 							std::cout << "Edvs: Skip byte (packet alignment corruption detected)" << std::endl;
 #endif
 							continue;
 						}
 
-						uint8_t a = buffer[buffer_offset++];
 						uint8_t b = buffer[buffer_offset++];
 						uint8_t c = buffer[buffer_offset++];
-						uint8_t d = 0x00;
-						uint8_t e = 0x00;
-						uint8_t f = 0x00;
+						uint8_t d = buffer[buffer_offset++];
 
-						// build the time value
-						uint32_t t = c & 0x7F;
-						if( ! (c & 0x80) ) { // if byte C's MSB is not set, timestamp is at least one more byte
-							d = buffer[buffer_offset++];
-							t = (t<<7) | (d & 0x7F);
-							if( ! (d & 0x80) ) { // if byte D's MSB is not set, timestamp is at least one more byte
-								e = buffer[buffer_offset++];
-								t = (t<<7) | (e & 0x7F);
-								if( ! (e & 0x80) ) { // if byte E's MSB is not set, timestamp is one more byte
-									f = buffer[buffer_offset++];
-									t = (t<<7) | (f & 0x7F);
-									if( ! (f & 0x80) ) { // if byte F's MSB is not set, we have a problem.
-										lastByteInBufferWasValid = false;
-										continue; // we will skip bytes until have two consecutive ones whose MSB is set
-									}
-								}
-							}
-						}
+						// read timestamp
+						uint64_t timestamp;
+						timestamp =
+							  ((uint64_t)(c) <<  8)
+							|  (uint64_t)(d);
+
+
 
 						// create event
 						uint8_t x = a & 0x7F;
 						uint8_t y = 127 - (b & 0x7F);
 						bool pol = b & 0x80;
 
-						buffA->push_back( Event{x,y,pol,t} );
+						buffA->push_back( Event{x,y,pol,timestamp} );
 					}
 #ifdef VERBOSE
 					//std::cout << events.size();

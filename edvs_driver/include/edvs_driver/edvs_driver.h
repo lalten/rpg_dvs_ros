@@ -75,6 +75,8 @@ private:
 
   uint64_t integratedTimeSinceReset; // sum of time_deltas in us
 
+  uint32_t last_timestamp;
+
   class Parameter {
   public:
     Parameter(uint32_t min = 0, uint32_t max = 0, uint32_t value = 0) :
