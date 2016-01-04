@@ -111,7 +111,7 @@ cv::Mat TransitionMap::get_visualization_image()
   if (has_pattern())
   {
     // Resize image to draw sharper/sub-pixel ChessboardCorners
-    const int upscale_factor = 4;
+    const int upscale_factor = 3;
     cv::Mat upscale_image;
     cv::Size upscale_size = cv::Size(image.rows * upscale_factor, image.cols * upscale_factor);
     cv::resize(image, upscale_image, upscale_size, 0, 0, cv::INTER_NEAREST);
