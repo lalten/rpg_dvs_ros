@@ -11,16 +11,17 @@ The following sections will give a precise overview of the project goal, problem
   * [Software Setup](#software-setup)
     * [Existing Software as Starting Point](#existing-software-as-starting-point)
     * [eDVS Driver for ROS](#edvs-driver-for-ros)
+    * [Rosgraph computation graph](#rosgraph-computation-graph)
   * [Calibration Walkthrough](#calibration-walkthrough)
     * [Using the calibration data](#using-the-calibration-data)
     * [Calibration Tweaks](#calibration-tweaks)
   * [Results](#results)
     * [Intrinsic and Extrinsic Camera Parameters](#intrinsic-and-extrinsic-camera-parameters)
+    * [3D Reconstruction](#3d-reconstruction)
     * [Benchmark Idea](#benchmark-idea)
     * [Learnings](#learnings)
   * [Ideas for Future Improvements](#ideas-for-future-improvements)
     * [Improvements to eDVS Ros Driver](#improvements-to-edvs-ros-driver)
-    * [Buffering of Events](#buffering-of-events)
 
 ## Project Goal
 
@@ -92,6 +93,17 @@ The eDVS driver for ROS is based on an [EDVS.h file from NST TUM](https://wiki.l
 - set master and slave for time synchronization in stereo setup mode
 - reset timestamps on sensors
 - provide sensor information, e.g. resolution.
+
+### Rosgraph computation graph
+
+Basic flow from the eDVS hardware driver through the DVS renderer to an image_view:
+<br/><img src="images/rosgraph_simple.png" width="100%"/>
+  
+Basic flow in the calibrated stereo case:
+<br/><img src="images/rosgraph_more.png" width="100%"/>
+
+Computation graph during stereo calibration with activated pattern picker tool:
+<br/><img src="images/graph_calibration_edvs_stereo.png" width="100%"/>
 
 ## Calibration Walkthrough
 1. Setup
