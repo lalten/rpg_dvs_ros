@@ -173,7 +173,7 @@ If you have your own LED board with different LEDs or blinking frequencies, you 
 
 ## Store detected patterns
 
-In order to analyze, which points where detected, one can record the result from two topics:
+In order to analyze, which points where detected, one can record the result from e.g. these topics:
 - /dvs_calibration/detected_points_left_or_single
 - /dvs_calibration/detected_points_left_or_single_pattern
 
@@ -197,6 +197,8 @@ rostopic echo /dvs_calibration/detected_points_left_or_single &
 rosbag record /dvs_calibration/detected_points_left_or_single_pattern /dvs_calibration/detected_points_left_or_single
 ```
 
+##Playback patterns
+
 For playback of the recorded data, run:
 ```
 roscore &
@@ -210,6 +212,19 @@ rosbag play -l 2015-12-14-15-17-38.bag
 #or step through the file: press p in the command window or
 #space to pause playback
 #rosbag play --pause 2015-12-14-15-17-38.bag 
+```
+
+##Plot patterns with matplotlib
+
+first, convert rosbag file to csv
+```
+rostopic echo -b 2015-12-22-00-53-33.bag -p /dvs_right/out/image_object_points > stereo-right.csv
+rostopic echo -b 2015-12-22-00-53-33.bag -p /dvs_left/out/image_object_points > stereo-left.csv
+```
+
+then, plot it using a small python script
+```
+python plot.py stereo-right.csv stereo-left.csv
 ```
 
 # Troubleshooting
