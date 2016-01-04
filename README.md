@@ -224,7 +224,17 @@ rostopic echo -b 2015-12-22-00-53-33.bag -p /dvs_left/out/image_object_points > 
 
 then, plot it using a small python script
 ```
-python plot.py stereo-right.csv stereo-left.csv
+python utils/plot.py stereo-right.csv
+#or try two or more files at once
+python utils/plot.py stereo-right.csv stereo-left.csv
+```
+
+for 3d recordings, you can also use
+```
+python utils/plot3d.py ../ttyUSB0.yaml ../ttyUSB1.yaml points-left.csv points-right.csv
+
+#or, if like usually, yaml with calibration info is stored in home file
+python utils/plot3d.py ~/.ros/camera_info/eDVS128-_dev_ttyUSB0.yaml ~/.ros/camera_info/eDVS128-_dev_ttyUSB1.yaml points-left.csv points-right.csv
 ```
 
 # Troubleshooting
