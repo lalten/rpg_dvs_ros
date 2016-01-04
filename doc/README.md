@@ -185,11 +185,12 @@ Visualization of eDVS lens distortion using our Matlab [script](scripts/distorti
 
 ### Benchmark Idea
 
-The goal was to create an benchmark for the calibration and rectification result. Our requirements were to be reproducible and easy to perform. It should provide ground truth and according calculated depth data. This enables to calculate the 3D reproduction error.
+One goal was to create an benchmark for the calibration and rectification result. Our requirements were to be reproducible and easy to perform. It should provide ground truth and according calculated depth data. This enables to calculate the 3D reprojection error.
 
-<!-- TODO: Why not use a reference IR-marker system? -->
+One approach to providing ground truth is using an marker based infrared optical tracking system. While such a system is available at the NST chair, the anticipated time for setting up and understanding the system did not seem to be worthwhile given the introduced spatial noise in ground truth and increased complexity of the experimental setup.
 
-We propose to use a laser-cut high density fiberboard construction to reproducibly move the LED board. The eDVS stereo setup is mounted on the construction. The board is moved on a z-Axis to fixed positions and snaps in. Then, the 3D position of the LEDs are measured with the eDVS. Afterwards, we calculate the distance (delta) between each 3D measurements. We also measure the ground-truth distances. Then, we compare the measured and ground-truth data in order to calculate the error. With this method we guarantee that the ground-truth data is the same for every run, even when the mounting position of the eDVS varies in the order of some millimeter.
+Instead, we propose to use a laser-cut high density fiberboard construction to reproducibly and accurately move the LED board. The eDVS stereo setup is mounted on the construction. The board moves on a Z-axis rail, where it snaps in at fixed positions. When both eDVS sensors capture the same feature (e.g. the blinking pattern), we can triangulate the feature's 3D positions with the help of the prerecorded camera calibration data being evaluated. The distance (delta) we can calculate between these 3D positions is compared to the Ground-truth distances which can easily measured or deduced from the rig's design files.  
+Using this method guarantees that the ground-truth data is the same for every run, even when the mounting position of the eDVS varies in the order of some millimeters.
 
 ### Learnings
 
@@ -240,14 +241,13 @@ $ echo -ne '!E1\nE+\n' > /dev/ttyUSB0
 #now your events should be displayed correctly
 ```
 
+Later, we switched to the "E2" timestamp format and used a [Boost circular buffer](http://www.boost.org/doc/libs/release/doc/html/circular_buffer.html) for processing. This ensured that no events were split and lost. This also removed the sporadic x/y shifts and mysterious noise at image borders (it seems that a few timestamp bytes were interpreted as X or Y some time).
+
+
 ## Ideas for Future Improvements
 
 ### Improvements to eDVS Ros Driver
 
 There already exists an improved version of the basic EDVS.h file, which was the starting point for the ROS driver. This early EDVS.h is very limited in functionality. Further efforts regarding the eDVS calibration topic should consider switching to the most recent version of [the library (edvstools)](https://github.com/Danvil/edvstools).
 
-### Buffering of Events
-In order to prevent event rejection, stop parsing the buffer if less than one complete package is available. Instead, read more data into the buffer. Then, continue processing.
 
-
- 
