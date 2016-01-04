@@ -24,7 +24,8 @@ The following sections will give a precise overview of the project goal, problem
 
 ## Project Goal
 
-In order to extract depth information from a camera stereo setup, most methods need some information about their positioning towards each other. The geometrical and intrinsic camera parameters as well as the rectification matrix are necessary. The project research is to develop a method, how to extract the parameters form a vision stream of a stereo eDVS camera setup.
+In order to extract depth information from a stereo camera setup, most methods require some information about their positioning towards each other. The geometrical and intrinsic camera parameters as well as the rectification matrix are necessary to calculate world coordinates from image features. A number of tools and a lot of literature on this topic exists and is in widespread use the research community and industry. The calibration procedure for conventional cameras is highly standardized.  
+Dynamic Vision Sensors are a promising new type of sensor that works with events instead of frames. Like traditional cameras, the mounted lens needs to be calibrated to achieve exact depth information. However, because of the difference in information representation between the two kinds of sensors, conventional calibration procedures like checkerboard corner detection cannot be applied. This research project aims to develop a method that facilitates extracting the parameters from a vision stream of a stereo eDVS camera setup.
 
 ### What is an eDVS?
 
