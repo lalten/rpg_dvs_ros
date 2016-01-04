@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+	<!-- left image -->
+	  <!-- visualization -->
+	  <node name="image_view" pkg="image_view" type="image_view" ns="dvs_left">
+		  <remap from="image" to="/dvs_calibration/detected_points_left_or_single_pattern" />
+	  </node>
+
+	  <!-- picker tool -->
+	  <node name="pattern_picker" pkg="dvs_calibration" type="pick.py" ns="dvs_left">
+		  <remap from="in/image_object_points" to="/dvs_calibration/detected_points_left_or_single" />
+	  </node>
+	  
+	<!-- right image -->
+	  <!-- visualization -->
+	  <node name="image_view" pkg="image_view" type="image_view" ns="dvs_right">
+		  <remap from="image" to="/dvs_calibration/detected_points_right_pattern" />
+	  </node>
+
+	  <!-- picker tool -->
+	  <node name="pattern_picker" pkg="dvs_calibration" type="pick.py" ns="dvs_right">
+		  <remap from="in/image_object_points" to="/dvs_calibration/detected_points_right" />
+	  </node>
+</launch>

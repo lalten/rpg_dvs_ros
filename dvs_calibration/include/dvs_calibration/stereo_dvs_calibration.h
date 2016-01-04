@@ -68,14 +68,20 @@ private:
   // ROS interface
   ros::Subscriber event_left_sub_, event_right_sub_;
   ros::Subscriber camera_info_left_sub_, camera_info_right_sub_;
+  ros::Subscriber image_object_points_left_sub_, image_object_points_right_sub_;
   image_transport::Publisher visualization_left_pub_, visualization_right_pub_;
   ros::ServiceClient set_camera_info_left_client_, set_camera_info_right_client_;
 
   // buffer to wait for other camera
-  void addStereoPattern(std::vector<cv::Point2f> left, std::vector<cv::Point2f> right);
+  void addStereoPattern(std::vector<cv::Point2f> left, std::vector<cv::Point2f> right,
+			cv::Mat image_pattern_left, cv::Mat image_pattern_right);
   std::vector<cv::Point2f> image_point_buffer_;
+  cv::Mat image_pattern_buffer;
   bool has_left_buffer_, has_right_buffer_;
   ros::Time buffer_time_;
+
+  void imageObjectPointsLeftCallback(dvs_msgs::ImageObjectPoints msg);
+  void imageObjectPointsRightCallback(dvs_msgs::ImageObjectPoints msg);
 
   // for pose publishing
   bool got_camera_info_left_, got_camera_info_right_;

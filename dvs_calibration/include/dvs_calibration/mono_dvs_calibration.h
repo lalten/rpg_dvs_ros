@@ -66,12 +66,14 @@ private:
   // ROS interface
   ros::Subscriber event_sub_;
   ros::Publisher camera_pose_pub_;
+  ros::Subscriber image_object_points_sub_;
   image_transport::Publisher visualization_pub_;
   image_transport::Publisher pattern_pub_;
   ros::ServiceClient set_camera_info_client_;
   ros::Subscriber camera_info_sub_;
   bool got_camera_info_;
   void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg);
+  void imageObjectPointsCallback(dvs_msgs::ImageObjectPoints msg);
 };
 
 } // namespace

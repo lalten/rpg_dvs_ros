@@ -27,9 +27,12 @@ DvsCalibration::DvsCalibration()
   calibration_output_pub_ = nh_.advertise<std_msgs::String>("dvs_calibration/output", 1);
 
   detected_points_left_or_single_pub_ = nh_.advertise<dvs_msgs::ImageObjectPoints>("dvs_calibration/detected_points_left_or_single", 1);
+  detected_points_right_pub_ = nh_.advertise<dvs_msgs::ImageObjectPoints>("dvs_calibration/detected_points_right", 1);
+
 
   image_transport::ImageTransport it(nh_);
   detected_points_left_or_single_pattern_pub_ = it.advertise("dvs_calibration/detected_points_left_or_single_pattern", 1);
+  detected_points_right_pattern_pub_ = it.advertise("dvs_calibration/detected_points_right_pattern", 1);
 
 
   calibration_running_ = false;
@@ -47,6 +50,53 @@ DvsCalibration::DvsCalibration()
   }
 }
 
+void DvsCalibration::publishAddedPattern(const int id, ros::Publisher &detected_points_pub,
+		image_transport::Publisher &detected_points_pattern_pub, std::vector<cv::Point2f> image_point_v, cv::Mat image_pattern)
+{
+
+  //IMPORTANT: Always publish the image first, so we can analyze the points based on the image
+  //which we can already display, because it was sent before
+  //publish detection transition image for the detected points
+
+  std_msgs::Header head;
+  head.stamp = ros::Time::now();
+  cv_bridge::CvImage cv_image;
+  cv_image.header = head;
+  cv_image.encoding = "bgr8";
+  cv_image.image = image_pattern.clone();
+
+  detected_points_pattern_pub.publish(cv_image.toImageMsg());
+
+
+  //publish detection points
+  //can be used for rosbag recordings and inspect the detected points or
+  //to store them with rosbag and potentially play them back later, e.g. for calibration again
+  dvs_msgs::ImageObjectPoints image_object_points_msg;
+
+  dvs_msgs::Point2f image_point;
+  for (cv::Point2f pp : image_point_v) {
+	  image_point.x = pp.x;
+	  image_point.y = pp.y;
+	  image_object_points_msg.image_points.push_back(image_point);
+  }
+  dvs_msgs::Point3f image_point3;
+	for (cv::Point3f pp : world_pattern_) {
+	  image_point3.x = pp.x;
+	  image_point3.y = pp.y;
+	  image_point3.z = pp.z;
+	  image_object_points_msg.object_points.push_back(image_point3);
+	}
+	image_object_points_msg.header.stamp = ros::Time::now();
+	detected_points_pub.publish(image_object_points_msg);
+}
+
+void DvsCalibration::publishNumDetections()
+{
+	std_msgs::Int32 msg;
+	msg.data = num_detections_;
+	num_detections_pub_.publish(msg);
+}
+
 void DvsCalibration::eventsCallback(const dvs_msgs::EventArray::ConstPtr& msg, int camera_id)
 {
   if (calibration_running_)
@@ -61,11 +111,10 @@ void DvsCalibration::eventsCallback(const dvs_msgs::EventArray::ConstPtr& msg, i
     ROS_DEBUG("Try to find pattern");
     if (transition_maps_[camera_id].has_pattern()) {
       ROS_DEBUG("Found pattern.");
+
       addPattern(camera_id);
 
-      std_msgs::Int32 msg;
-      msg.data = num_detections_;
-      num_detections_pub_.publish(msg);
+      publishNumDetections();
 
       updateVisualization(camera_id);
 

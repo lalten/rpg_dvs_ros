@@ -83,6 +83,8 @@ protected:
   virtual void startCalibration() = 0;
   virtual void saveCalibration() = 0;
 
+  void publishNumDetections();
+
 
   std::vector<cv::Point3f> world_pattern_;
   virtual void addPattern(int id) = 0;
@@ -97,9 +99,14 @@ protected:
   ros::Publisher calibration_output_pub_;
 
   ros::Publisher detected_points_left_or_single_pub_;
+  ros::Publisher detected_points_right_pub_;
   image_transport::Publisher detected_points_left_or_single_pattern_pub_;
+  image_transport::Publisher detected_points_right_pattern_pub_;
 
   void loadCalibrationParameters();
+
+  void publishAddedPattern(const int id, ros::Publisher &detected_points_pub,
+			image_transport::Publisher &detected_points_patttern_pub, std::vector<cv::Point2f> image_point_v, cv::Mat image_pattern);
 };
 
 } // namespace
