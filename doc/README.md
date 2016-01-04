@@ -4,6 +4,24 @@ Part of this project was contributed within the scope of a practical course at t
 
 The following sections will give a precise overview of the project goal, problems and insights which we gained while developing a solution.
 
+## Table of Contents
+<!-- generated with ./scripts/gen_toc.rb -->
+  * [Project Goal](#project-goal)
+    * [What is an eDVS?](#what-is-an-edvs?)
+  * [Software Setup](#software-setup)
+    * [Existing Software as Starting Point](#existing-software-as-starting-point)
+    * [eDVS Driver for ROS](#edvs-driver-for-ros)
+  * [Calibration Walkthrough](#calibration-walkthrough)
+    * [Using the calibration data](#using-the-calibration-data)
+    * [Calibration Tweaks](#calibration-tweaks)
+  * [Results](#results)
+    * [Intrinsic and Extrinsic Camera Parameters](#intrinsic-and-extrinsic-camera-parameters)
+    * [Benchmark Idea](#benchmark-idea)
+    * [Learnings](#learnings)
+  * [Ideas for Future Improvements](#ideas-for-future-improvements)
+    * [Improvements to eDVS Ros Driver](#improvements-to-edvs-ros-driver)
+    * [Buffering of Events](#buffering-of-events)
+
 ## Project Goal
 
 In order to extract depth information from a camera stereo setup, most methods need some information about their positioning towards each other. The geometrical and intrinsic camera parameters as well as the rectification matrix are necessary. The project research is to develop a method, how to extract the parameters form a vision stream of a stereo eDVS camera setup.
