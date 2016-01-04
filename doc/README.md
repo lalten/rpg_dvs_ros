@@ -119,8 +119,34 @@ The eDVS driver for ROS is based on an [EDVS.h file from NST TUM](https://wiki.l
 <!-- TODO: provide screenshots -->
 
 
-### Shortcut if you just want to use calibration files in ROS
-<!-- TODO -->
+### Using the calibration data
+
+#### In ROS
+If camera calibration has been completed beforehand, it is easy and straightforward to use the calibration in ROS. First, make sure the precomputed calibration files are where ROS's camera_info_manager expects them. This is usually `~/.ros/camera_info/eDVS128-_dev_ttyUSB0.yaml`. The [camera_info_manager](http://wiki.ros.org/camera_info_manager) ROS package, which is part of ROS's [image_pipeline](http://wiki.ros.org/image_pipeline) stack, will then be able to use the calibration automatically.  
+The image_pipeline is designed to process complete frames of pixel-images. Thus, we need the *dvs_renderer* to generate an image from an accumulation of eDVS events.
+
+Usage:
+ * Start eDVS event output: `$ roslaunch edvs_ros_driver edvs-stereo.launch`
+ * Render images and display stages of image_pipelines stereo processing: `$ roslaunch edvs_ros_driver stereo-display.launch`
+ 
+#### Elsewhere
+The calibration uses a [Plumb Bob](http://www.vision.caltech.edu/bouguetj/calib_doc/htmls/parameters.html) distortion model, which is a sufficient and simple model of radial and tangential distortion.  
+The intrinsic camera matrix is the standard 3x3 matrix containing focal lengths (fx, fy) and principal point(cx, cy).  
+In the stereo case, the calibration also provides rectification and projection matrices.  
+The rectification matrix is the rotation matrix that aligns the camera coordinate systems to the ideal stereo image plane so that epipolar lines are parallel.  
+The projection matrix is the 3x4 stereo extension of the intrinsic matrix. It adds the position of the second camera's optical center in the first camera's image frame.  
+You can read the full specs in the [CameraInfo ROS message documentation](http://docs.ros.org/api/sensor_msgs/html/msg/CameraInfo.html).
+
+Given a 3D point [X Y Z]', the projection (x, y) of the point onto the rectified image is given by:
+<br/><img src="https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/eqn_3D_proj.svg" height="129px"/>
+
+The calibration data can easily be used in other environments. The following example generates a Matlab [cameraParameters](https://mathworks.com/help/vision/ref/cameraparameters-class.html) object:
+```
+cp = cameraParameters( ...
+    'IntrinsicMatrix', [164.0138, 0, 80.1241; 0, 164.8755, 44.2025; 0, 0, 1], ...
+    'RadialDistortion', [-0.2875, 0.1980], ...
+    'TangentialDistortion', [-0.0038, 0.0081]);
+```
 
 ### Calibration Tweaks
 See [Calibration Details and Parameters](../README.md#calibration-details-and-parameters).
