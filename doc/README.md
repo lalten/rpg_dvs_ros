@@ -183,6 +183,9 @@ Example of an original image vs. undistorted image:
 Visualization of eDVS lens distortion using our Matlab [script](scripts/distortion.m).
 <br/><img src="https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/distortion.svg" height="500px"/>
 
+### 3D Reconstruction
+With successful pattern capture capabilities, 3D point reconstruction can be attempted. The plot below shows the camera positions as detected during calibration in red. Three 3x4 LED board patterns in different distances are visualized in green, orange and blue. The plot was created with a Python [script](../utils/plot3d.py).
+<br/><img src="https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/plot_3d_reconstruction.svg" height="500px"/>
 
 ### Benchmark Idea
 
