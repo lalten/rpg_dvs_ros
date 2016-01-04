@@ -75,12 +75,16 @@ int main(int argc, char* argv[])
 
 #include <boost/thread.hpp>
 #include <boost/function.hpp>
+#include <boost/circular_buffer.hpp>
+
 #include <iostream>
 #include <string>
 #include <stdexcept>
 #include <vector>
 #include <fcntl.h>
 #include <termios.h>
+
+
 
 //#define VERBOSE
 #define RESET_ON_CLOSE
@@ -92,8 +96,6 @@ namespace Edvs
 	};
 
 	const int cDeviceDisplaySize = 128;
-
-	const bool cEnableFillRead = false;
 
 	namespace Impl
 	{
@@ -228,7 +230,9 @@ namespace Edvs
 			void Run() {
 				const unsigned char cHighBitMask = 0x80;
 				const unsigned char cLowerBitsMask = 0x7F;
+				boost::circular_buffer<uint8_t> cbuffer(buffer_size_);
 				unsigned char* buffer = new unsigned char[buffer_size_];
+
 				std::vector<Event>* buff1 = new std::vector<Event>();
 				buff1->reserve(buffer_size_ / 2 + 1);
 				std::vector<Event>* buff2 = new std::vector<Event>();
@@ -237,34 +241,19 @@ namespace Edvs
 				std::vector<Event>* buffB = buff2;
 				while(running_) {
 					size_t bytes_read = 0;
-					if(cEnableFillRead) {
-						while(bytes_read < buffer_size_) {
-							size_t n = device_.ReadBinaryData(buffer_size_ - bytes_read, (char*)buffer + bytes_read);
-							bytes_read += n;
-							if(n == 0) {
-								break;
-							}
-						}
-					} else {
-						bytes_read = device_.ReadBinaryData(buffer_size_, (char*)buffer);
+					bytes_read = device_.ReadBinaryData(buffer_size_, (char*)buffer);
+
+					//copy data into circular buffer
+					for(size_t index = 0; index < bytes_read; index++) {
+						cbuffer.push_back(buffer[index]);
 					}
+
 					buffA->clear();
 
-					// keep code below simple, but also prevent segmentation faults
-					if(bytes_read < 4)
-					{
-					  // we might lose some bytes, so packets might need to be dropped
-					  lastByteInBufferWasValid = false;
-#ifdef VERBOSE
-            std::cout << "Edvs: Skip buffer (too few bytes)" << std::endl;
-#endif
-            continue; // don't use this buffer, try reading again
-					}
+					while(cbuffer.size() >= 4) {
 
-					size_t buffer_offset = 0;
-					while(buffer_offset < (bytes_read - 4)) {
-
-						uint8_t a = buffer[buffer_offset++];
+						uint8_t a = cbuffer.front();
+						cbuffer.pop_front();
 
 						//check if first byte is 1
 						if(!(a& 0x80)) {
@@ -275,9 +264,14 @@ namespace Edvs
 							continue;
 						}
 
-						uint8_t b = buffer[buffer_offset++];
-						uint8_t c = buffer[buffer_offset++];
-						uint8_t d = buffer[buffer_offset++];
+						uint8_t b = cbuffer.front();
+						cbuffer.pop_front();
+
+						uint8_t c = cbuffer.front();
+						cbuffer.pop_front();
+
+						uint8_t d = cbuffer.front();
+						cbuffer.pop_front();
 
 						// read timestamp
 						uint64_t timestamp;
@@ -300,6 +294,7 @@ namespace Edvs
 					event_callback_(*buffA);
 					std::swap(buffA, buffB);
 				}
+
 				delete[] buffer;
 				delete buff1;
 				delete buff2;
