@@ -6,22 +6,32 @@ The following sections will give a precise overview of the project goal, problem
 
 ## Table of Contents
 <!-- generated with ./scripts/gen_toc.rb -->
+* [Project Summary](#project-summary)
   * [Project Goal](#project-goal)
-    * [What is an eDVS?](#what-is-an-edvs?)
-  * [Software Setup](#software-setup)
-    * [Existing Software as Starting Point](#existing-software-as-starting-point)
-    * [eDVS Driver for ROS](#edvs-driver-for-ros)
-    * [Rosgraph computation graph](#rosgraph-computation-graph)
-  * [Calibration Walkthrough](#calibration-walkthrough)
-    * [Using the calibration data](#using-the-calibration-data)
-    * [Calibration Tweaks](#calibration-tweaks)
-  * [Results](#results)
-    * [Intrinsic and Extrinsic Camera Parameters](#intrinsic-and-extrinsic-camera-parameters)
-    * [3D Reconstruction](#3d-reconstruction)
-    * [Benchmark Idea](#benchmark-idea)
-    * [Learnings](#learnings)
-  * [Ideas for Future Improvements](#ideas-for-future-improvements)
-    * [Improvements to eDVS Ros Driver](#improvements-to-edvs-ros-driver)
+  * [Initial Plan](#initial-plan)
+  * [Key Challenges](#key-challenges)
+  * [Summary of Results](#summary-of-results)
+  * [Future Work](#future-work)
+* [What is an eDVS?](#what-is-an-edvs?)
+* [Software Setup](#software-setup)
+  * [Existing Software as Starting Point](#existing-software-as-starting-point)
+  * [eDVS Driver for ROS](#edvs-driver-for-ros)
+  * [Computation Graph of Software Nodes](#computation-graph-of-software-nodes)
+* [Calibration Model](#calibration-model)
+* [Calibration Walkthrough](#calibration-walkthrough)
+  * [Using the Calibration Data](#using-the-calibration-data)
+  * [Calibration Tweaks](#calibration-tweaks)
+* [Results](#results)
+  * [Intrinsic and Extrinsic Camera Parameters](#intrinsic-and-extrinsic-camera-parameters)
+  * [3D Reconstruction](#3d-reconstruction)
+  * [Benchmark](#benchmark)
+  * [Learnings](#learnings)
+* [Suggested Improvements for eDVS Ros Driver](#suggested-improvements-for-edvs-ros-driver)
+* [Tools](#tools)
+  * [Store Detected Patterns](#store-detected-patterns)
+  * [Playback Stored Patterns](#playback-stored-patterns)
+  * [Plot Patterns with Matplotlib](#plot-patterns-with-matplotlib)
+
 
 ## Project Summary
 
@@ -139,9 +149,9 @@ The eDVS driver for ROS is based on an [EDVS.h file from NST TUM](https://wiki.l
 - reset timestamps on sensors
 - provide sensor information, e.g. resolution.
 
-### Rosgraph computation graph
+### Computation Graph of Software Nodes
 
-Basic flow from the eDVS hardware driver through the DVS renderer to an image_view:
+The basic flow of data from the eDVS hardware driver through the DVS renderer to an image_view, displayed with using the rosgraph tool:
 <br/><img src="images/rosgraph_simple.png" width="100%"/>
 
 Basic flow in the calibrated stereo case:
@@ -207,7 +217,7 @@ Given a 3D point [X Y Z]', the projection (x, y) of the point onto the rectified
 <!-- TODO: provide screenshots -->
 
 
-### Using the calibration data
+### Using the Calibration Data
 
 #### In ROS
 If camera calibration has been completed beforehand, it is easy and straightforward to use the calibration in ROS. First, make sure the precomputed calibration files are where ROS's camera_info_manager expects them. This is usually `~/.ros/camera_info/eDVS128-_dev_ttyUSB0.yaml`. The [camera_info_manager](http://wiki.ros.org/camera_info_manager) ROS package, which is part of ROS's [image_pipeline](http://wiki.ros.org/image_pipeline) stack, will then be able to use the calibration automatically.  
@@ -318,17 +328,14 @@ $ echo -ne '!E1\nE+\n' > /dev/ttyUSB0
 
 Later, we switched to the "E2" timestamp format and used a [Boost circular buffer](http://www.boost.org/doc/libs/release/doc/html/circular_buffer.html) for processing. This ensured that no events were split and lost. This also removed the sporadic x/y shifts and mysterious noise at image borders (it seems that a few timestamp bytes were interpreted as X or Y some time).
 
-
-## Ideas for Future Improvements
-
-### Improvements to eDVS Ros Driver
+## Suggested Improvements for eDVS Ros Driver
 
 There already exists an improved version of the basic EDVS.h file, which was the starting point for the ROS driver. This early EDVS.h is very limited in functionality. Further efforts regarding the eDVS calibration topic should consider switching to the most recent version of [the library (edvstools)](https://github.com/Danvil/edvstools).
 
 
 ## Tools
 
-### Store detected patterns
+### Store Detected Patterns
 
 In order to analyze, which points where detected, one can record the result from e.g. these topics:
 - /dvs_calibration/detected_points_left_or_single
@@ -354,7 +361,7 @@ rostopic echo /dvs_calibration/detected_points_left_or_single &
 rosbag record /dvs_calibration/detected_points_left_or_single_pattern /dvs_calibration/detected_points_left_or_single
 ```
 
-### Playback patterns
+### Playback Stored Patterns
 
 For playback of the recorded data, run:
 ```
@@ -371,7 +378,7 @@ rosbag play -l 2015-12-14-15-17-38.bag
 #rosbag play --pause 2015-12-14-15-17-38.bag
 ```
 
-### Plot patterns with matplotlib
+### Plot Patterns with Matplotlib
 
 first, convert rosbag file to csv
 ```
