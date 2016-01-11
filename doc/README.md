@@ -35,7 +35,7 @@ An eDVS (embedded Dynamic Vision Sensor) produces an event stream. Compared to a
 ## Software Setup
 
 ### Existing Software as Starting Point
-Camera calibration and rectification is already done routinely for "normal", frame-based cameras. Therefore, there exist many tools to tackle the task. One of them is the open-source computer vision library [OpenCV](http://opencv.org/). Based on this library, the open source [Robot Operating System (ROS)](http://wiki.ros.org/camera_calibration) provides a package, called [Camera Calibration](http://wiki.ros.org/camera_calibration). It helps to facilitate the calibration process of &bdquo;monocular or stereo cameras using a checkerboard calibration target&ldquo; <sup>[1](http://wiki.ros.org/camera_calibration)</sup>. Unfortunately, it is only for frame-based cameras. For that reason, the [Robotics and Perception Group of Zurich](http://rpg.ifi.uzh.ch/) published another open-source package for ROS called [rpg_dvs_ros](https://github.com/uzh-rpg/rpg_dvs_ros). The software tries to use existing parts of the camera_calibration package and OpenCV again.
+Camera calibration and rectification is already done routinely for &bdquo;normal&ldquo;, frame-based cameras. Therefore, there exist many tools to tackle the task. One of them is the open-source computer vision library [OpenCV](http://opencv.org/). Based on this library, the open source [Robot Operating System (ROS)](http://wiki.ros.org/camera_calibration) provides a package, called [Camera Calibration](http://wiki.ros.org/camera_calibration). It helps to facilitate the calibration process of &bdquo;monocular or stereo cameras using a checkerboard calibration target&ldquo; <sup>[1](http://wiki.ros.org/camera_calibration)</sup>. Unfortunately, it is only for frame-based cameras. For that reason, the [Robotics and Perception Group of Zurich](http://rpg.ifi.uzh.ch/) published another open-source package for ROS called [rpg_dvs_ros](https://github.com/uzh-rpg/rpg_dvs_ros). The software tries to use existing parts of the camera_calibration package and OpenCV again.
 
 Instead of trying to reinvent the wheel again, we think the best approach is to build upon proven existing software. Therefore, this project uses the rpg_dvs_ros  package as starting point. We forked the original repository in order to implement and add our new features.
 
@@ -86,7 +86,7 @@ Supported Commands:
  !E4   - 6 bytes per event (as above followed by 32bit timestamp 1us res)
 ```
 
-> **Note** When sending multiple commands in one echo, e.g. `$ echo -ne 'R\n!S2\n!E1\nE+\n' > /dev/ttyUSB0`, the eDVS microcontroller might behave unexpected. We experienced some issues like the camera not starting to send data.
+> **Note** When sending multiple commands in one echo, e.g. `$ echo -ne 'R\n!S2\n!E1\nE+\n' > /dev/ttyUSB0`, the eDVS microcontroller might behave unexpected. We experienced some issues like the camera not starting to send data. As a workaround, send the commands separately and wait a little in between each of them.
 
 The eDVS driver for ROS is based on an [EDVS.h file from NST TUM](https://wiki.lsr.ei.tum.de/nst/programming/edvs-cpp). Our newly developed `edvs_ros_driver` package uses `EDVS.h` to exchange data with the hardware. It's main purpose is the setup and integration, mainly
 - reset eDVS and set proper event format
@@ -129,7 +129,7 @@ Computation graph during stereo calibration with activated pattern picker tool:
     * Start fresh by pressing the /Reset/ button in top left panel (might need to resize window)
     * Successful pattern recognitions increment counter in top left
     * Don't move [too much](#movements-during-calibration-process)
-    * Try to capture enough patterns close to image edges, because lens distortion increases radially. Check "Capture Images" at MathWorks's single camera [calibration documentation](http://de.mathworks.com/help/vision/ug/single-camera-calibrator-app.html#bt19jdq-1).
+    * Try to capture enough patterns close to image edges, because lens distortion increases radially. Check &bdquo;Capture Images&ldquo; at MathWorks's single camera [calibration documentation](http://de.mathworks.com/help/vision/ug/single-camera-calibrator-app.html#bt19jdq-1).
     * Capture something like 40 patterns
   * Calculate and save intrinsic calibration
     * Hit the *Start Calibration* button to start calculations (this freezes rqt).
@@ -174,7 +174,7 @@ Given a 3D point [X Y Z]', the projection (x, y) of the point onto the rectified
 The calibration data can easily be used in other environments. The following example generates a Matlab [cameraParameters](https://mathworks.com/help/vision/ref/cameraparameters-class.html) object:
 ```
 cp = cameraParameters( ...
-    'IntrinsicMatrix', [164.0138, 0, 80.1241; 0, 164.8755, 44.2025; 0, 0, 1], ...
+    'IntrinsicMatrix', [164.013, 0, 80.124; 0, 164.875, 44.202; 0, 0, 1], ...
     'RadialDistortion', [-0.2875, 0.1980], ...
     'TangentialDistortion', [-0.0038, 0.0081]);
 ```
@@ -187,17 +187,19 @@ See [Calibration Details and Parameters](../README.md#calibration-details-and-pa
 
 ## Results
 
-### Intrinsic and Extrinsic Camera Parameters
+### Intrinsic Camera Parameters
 
-Example of an original image vs. undistorted image:
+In the comparison of an original image vs. undistorted image below, we can see that originally straight lines of events that were curved by lens distortion appear straight again after undistortion.
 ![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/original-vs-undistored-image.svg)
 
-Visualization of eDVS lens distortion using our Matlab [script](scripts/distortion.m).
+Using our Matlab [script](scripts/distortion.m), we visualized the magnitude and spatial distribution of a typical result of eDVS lens distortion detection. We can see that the distortion is not centered around the image center, probably because the sensor and its lens are not perfectly aligned mechanically. As expected from the mounted type of lens, the distortion increases radially around the principal point.
 <br/><img src="https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/distortion.svg" height="500px"/>
 
-### 3D Reconstruction
-With successful pattern capture capabilities, 3D point reconstruction can be attempted. The plot below shows the camera positions as detected during calibration in red. Three 3x4 LED board patterns in different distances are visualized in green, orange and blue. The plot was created with a Python [script](../utils/plot3d.py).
+### Extrinsic Parameters and 3D Reconstruction
+With successful pattern capture capabilities, 3D point reconstruction can be attempted. The plot below shows the camera positions as detected during calibration of extrinsic parameters in red. Three 3x4 LED board patterns in different distances are visualized in green, orange and blue. The plot was created with a Python [script](../utils/plot3d.py).
 <br/><img src="https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/plot_3d_reconstruction.svg" height="500px"/>
+
+The two .yaml files of an successful 3D calibration are provided in [/cal_example/2015-12-22-00-53-33-eDVS128-_dev_ttyUSB0.yaml](cal_example/2015-12-22-00-53-33-eDVS128-_dev_ttyUSB0.yaml) and [...ttyUSB1.yaml](cal_example/2015-12-22-00-53-33-eDVS128-_dev_ttyUSB1.yaml)
 
 ### Benchmark Idea
 
@@ -229,15 +231,15 @@ Our solution is to use both (1) a statically mounted camera and (2) a fixed led 
 
 ![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/led-board-moving-pattern.svg)
 
-In our animation of pattern recognition you can observe how (1) the pattern shifts over the board and (2) how pixel coordinates of the same pattern points vary relatively little (about +- 0.3px max), because no movement is introduced.
+In our animation of pattern recognition you can observe how the pattern shifts over the board over time. The recognized pixel coordinates of the same pattern points at different times vary relatively little (about &plusmn;0.3px max), because no movement is introduced.
 
 ![Image](images/patterns_small.gif)
 
 #### Wrong Buffering rejects Events
-The buffer in the original `eDVS.h` read all available bytes on the serial interface. Sometimes, the buffer ended in the middle of an event package. Then, it rejected the package, because it was incomplete. Our solution was to always read at least six bytes from the serial before we try to process it.
+The buffer in the originally provided `EDVS.h` include file reads all available bytes on the serial interface. Sometimes, the buffer ended in the middle of an event package. In that case, it rejects the package, because it is incomplete. Our first solution for this problem was to always read at least six bytes from the serial before we try to process it. Later, we used a [Boost circular buffer](http://www.boost.org/doc/libs/release/doc/html/circular_buffer.html) for processing. This ensured that no events were split and lost.
 
 #### Original eDVS.h without Timestamps
-The original `eDVS.h` did not provide timestamps. Hence, we implemented this functionality ourselves. As we learned later, there is an improved version available at [edvstools](https://github.com/Danvil/edvstools).
+The original `EDVS.h` did not provide timestamps. Hence, we implemented this functionality ourselves. As we learned later, there is an improved version available at [edvstools](https://github.com/Danvil/edvstools). Our implementing the &bdquo;E1&ldquo; mode enabled use of the transition map, which is necessary for recognition of patterns.
 
 #### Shifted X and Y Coordinates for On-Events
 Sometimes the sensor image shows shifted x and y values for on-events. The reason so far is not completely clear. We used the following quick-fix (while the calibration interface was running) in a separate terminal:
@@ -257,7 +259,7 @@ $ echo -ne '!E1\nE+\n' > /dev/ttyUSB0
 #now your events should be displayed correctly
 ```
 
-Later, we switched to the "E2" timestamp format and used a [Boost circular buffer](http://www.boost.org/doc/libs/release/doc/html/circular_buffer.html) for processing. This ensured that no events were split and lost. This also removed the sporadic x/y shifts and mysterious noise at image borders (it seems that a few timestamp bytes were interpreted as X or Y some time).
+Later, we switched to the &bdquo;E2&ldquo; timestamp format and the aforementioned ring buffer processing, which removed the sporadic x/y shifts and mysterious noise at image borders (it seems that a few timestamp bytes were interpreted as X or Y some time).
 
 
 ## Ideas for Future Improvements
