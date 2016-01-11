@@ -51,7 +51,7 @@ You can then start the calibration of one camera
 ## Very detailed example of installation (tested on Ubuntu 14.04.01 LTS)
 ```
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-sudo apt-get update 
+sudo apt-get update
 sudo apt-get install ros-jade-desktop
 sudo apt-get install ros-jade-camera-info-manager
 sudo rosdep init
@@ -63,7 +63,7 @@ source ~/.bashrc
 #create project folder
 mkdir -p catkin_ws/src
 cd catkin_ws/src/
-catkin_init_workspace 
+catkin_init_workspace
 cd ..
 catkin_make
 #working
@@ -104,8 +104,8 @@ roslaunch dvs_calibration intrinsic_edvs.launch
 #for dvs_render
 sudo apt-get install ros-jade-image-view
 
-#for rosrun image_view 
-sudo aptitude install ros-jade-stereo-image-proc 
+#for rosrun image_view
+sudo aptitude install ros-jade-stereo-image-proc
 ```
 
 
@@ -128,7 +128,7 @@ Collect at least 30 samples before starting the calibration.
 **This can take up to a few minutes** and freezes your RQT GUI.
 Once done, the calibration parameters are shown and can be saved.
 The camera parameters will be stored in `~/.ros/camera_info`.
-When you plug that DVS again, this calibration file will be loaded and published as `/dvs/camera_info`. 
+When you plug that DVS again, this calibration file will be loaded and published as `/dvs/camera_info`.
 
 The image viewers below show the following:
 
@@ -140,10 +140,10 @@ The image viewers below show the following:
 # Stereo DVS Calibration
 
 ## Setup
-Connect the two DVS from OUT (master) to IN (slave). 
+Connect the two DVS from OUT (master) to IN (slave).
 GND must not be connected if both DVS are connected over USB to the same computer, to avoid ground loops.
 Time synchronization is performed automatically in the driver software.
-Since each DVS has a separate driver, the ROS messages might arrive at different times. 
+Since each DVS has a separate driver, the ROS messages might arrive at different times.
 Hover, the timestamps within the messages are synchronized.
 
 ## Calibration
@@ -155,7 +155,7 @@ Hover, the timestamps within the messages are synchronized.
 
 # Calibration Details and Parameters
 The calibration requires a board with a regular grid of blinking LEDs.
-In our case we have a 5x5 grid with a 0.05m distance between the LEDs. 
+In our case we have a 5x5 grid with a 0.05m distance between the LEDs.
 One of the rows can be turned off (to make a 5x4 grid) to avoid confusion in the stereo case.
 The following parameters can be tuned using ROS parameters:
 * `dots_w`, `dots_h` (default: 5) is the number of rows and columns in the grid of LEDs
@@ -169,77 +169,9 @@ If you have your own LED board with different LEDs or blinking frequencies, you 
 * `minimum_led_mass` (default: 50) is the minimum "mass" of an LED blob, i.e., the sum of transitions in this blop
 * `pattern_search_timeout` (default: 2.0) is the timeout in **seconds** when the transition map is reset (it is also reset when the LED grid was found)
 
-# Tools
-
-## Store detected patterns
-
-In order to analyze, which points where detected, one can record the result from e.g. these topics:
-- /dvs_calibration/detected_points_left_or_single
-- /dvs_calibration/detected_points_left_or_single_pattern
-
-
-Here a short example, how to e.g. record and view the data:
-```
-#first source resources
-source devel/setup.bash
-
-#run the calibration interface
-roslaunch dvs_calibration intrinsic_edvs.launch
-
-#now, on e.g. other terminal
-#this will display only the transition maps with detected points
-rosrun image_view image_view image:=/dvs_calibration/detected_points_left_or_single_pattern &
-
-#this will show the detected points messages
-rostopic echo /dvs_calibration/detected_points_left_or_single &
-
-#this will record both of them in a file
-rosbag record /dvs_calibration/detected_points_left_or_single_pattern /dvs_calibration/detected_points_left_or_single
-```
-
-##Playback patterns
-
-For playback of the recorded data, run:
-```
-roscore &
-
-#this will show the detected points messages
-rostopic echo /dvs_calibration/detected_points_left_or_single &
-
-#play in an endless loop the file
-rosbag play -l 2015-12-14-15-17-38.bag 
-
-#or step through the file: press p in the command window or
-#space to pause playback
-#rosbag play --pause 2015-12-14-15-17-38.bag 
-```
-
-##Plot patterns with matplotlib
-
-first, convert rosbag file to csv
-```
-rostopic echo -b 2015-12-22-00-53-33.bag -p /dvs_right/out/image_object_points > stereo-right.csv
-rostopic echo -b 2015-12-22-00-53-33.bag -p /dvs_left/out/image_object_points > stereo-left.csv
-```
-
-then, plot it using a small python script
-```
-python utils/plot.py stereo-right.csv
-#or try two or more files at once
-python utils/plot.py stereo-right.csv stereo-left.csv
-```
-
-for 3d recordings, you can also use
-```
-python utils/plot3d.py ../ttyUSB0.yaml ../ttyUSB1.yaml points-left.csv points-right.csv
-
-#or, if like usually, yaml with calibration info is stored in home file
-python utils/plot3d.py ~/.ros/camera_info/eDVS128-_dev_ttyUSB0.yaml ~/.ros/camera_info/eDVS128-_dev_ttyUSB1.yaml points-left.csv points-right.csv
-```
-
 # Troubleshooting
 ## New dvs_msgs format
-If you recorded rosbags with a previous version of this package, they must be migrated. 
+If you recorded rosbags with a previous version of this package, they must be migrated.
 The format for the timestamps changed from uint64 to rostime.
 To convert an "old" bag file, use   
 `$ rosbag fix old.bag new.bag`.

@@ -35,9 +35,9 @@ An eDVS (embedded Dynamic Vision Sensor) produces an event stream. Compared to a
 ## Software Setup
 
 ### Existing Software as Starting Point
-Camera calibration and rectification is already done routinely for "normal", frame-based cameras. Therefore, there exist many tools to tackle the task. One of them is the open-source computer vision library [OpenCV](http://opencv.org/). Based on this library, the open source [Robot Operating System (ROS)](http://wiki.ros.org/camera_calibration) provides a package, called [Camera Calibration](http://wiki.ros.org/camera_calibration). It helps to facilitate the calibration process of &bdquo;monocular or stereo cameras using a checkerboard calibration target&ldquo; <sup>[1](http://wiki.ros.org/camera_calibration)</sup>. Unfortunately, it is only for frame-based cameras. For that reason, the [Robotics and Perception Group of Zurich](http://rpg.ifi.uzh.ch/) published another open-source package for ROS called [rpg_dvs_ros](https://github.com/uzh-rpg/rpg_dvs_ros). The software tries to use existing parts of the camera_calibration package and OpenCV again. 
+Camera calibration and rectification is already done routinely for "normal", frame-based cameras. Therefore, there exist many tools to tackle the task. One of them is the open-source computer vision library [OpenCV](http://opencv.org/). Based on this library, the open source [Robot Operating System (ROS)](http://wiki.ros.org/camera_calibration) provides a package, called [Camera Calibration](http://wiki.ros.org/camera_calibration). It helps to facilitate the calibration process of &bdquo;monocular or stereo cameras using a checkerboard calibration target&ldquo; <sup>[1](http://wiki.ros.org/camera_calibration)</sup>. Unfortunately, it is only for frame-based cameras. For that reason, the [Robotics and Perception Group of Zurich](http://rpg.ifi.uzh.ch/) published another open-source package for ROS called [rpg_dvs_ros](https://github.com/uzh-rpg/rpg_dvs_ros). The software tries to use existing parts of the camera_calibration package and OpenCV again.
 
-Instead of trying to reinvent the wheel again, we think the best approach is to build upon proven existing software. Therefore, this project uses the rpg_dvs_ros  package as starting point. We forked the original repository in order to implement and add our new features. 
+Instead of trying to reinvent the wheel again, we think the best approach is to build upon proven existing software. Therefore, this project uses the rpg_dvs_ros  package as starting point. We forked the original repository in order to implement and add our new features.
 
 ### eDVS Driver for ROS
 
@@ -98,7 +98,7 @@ The eDVS driver for ROS is based on an [EDVS.h file from NST TUM](https://wiki.l
 
 Basic flow from the eDVS hardware driver through the DVS renderer to an image_view:
 <br/><img src="images/rosgraph_simple.png" width="100%"/>
-  
+
 Basic flow in the calibrated stereo case:
 <br/><img src="images/rosgraph_more.png" width="100%"/>
 
@@ -110,7 +110,7 @@ Computation graph during stereo calibration with activated pattern picker tool:
   * Set up your software environment. The process is explained in detail in the [Installation section of the reposistory's README.md](../README.md#driver-installation).
     * Install necessary prerequisites ([ROS](http://www.ros.org/), [catkin_simple](https://github.com/catkin/catkin_simple.git), [libcaer](https://svn.code.sf.net/p/jaer/code/libcaer/trunk/), libusb-1.0-0-dev)
     * Check out this repository
-    * Build it. 
+    * Build it.
   * Set up your LED board.
     * We provide some documentation and the firmware for our board at our [ledboard repository](https://github.com/lalten/ledboard/tree/dynamic).
     * If you want to follow our recommendation to use the fixed calibration rig, mount eDVS cameras and LED board on it.
@@ -137,16 +137,16 @@ Computation graph during stereo calibration with activated pattern picker tool:
     * Inspect the undistortion result quality in the lower right image view. ([example](#intrinsic-and-extrinsic-camera-parameters))
     * You could also use a Matlab [script](scripts/distortion.m) to visualize distortion in a quiver plot.
   * Repeat for the second camera (use `$ roslaunch dvs_calibration intrinsic_edvs_usb1.launch`)
-  
+
   Screenshot of mono calibration:
   <br/><img src="images/calibration-gui-mono.png" height="520px"/>
-  
+
 * Calibrate in [stereo mode](../README.md#stereo-dvs-calibration)
   * Make sure you have intrinsic parameters for the left and right camera in `~/.ros/camera_info/eDVS128-_dev_ttyUSB0.yaml` and `~/.ros/camera_info/eDVS128-_dev_ttyUSB1.yaml`, respectively.
   * Start the stereo calibration GUI: `$ roslaunch dvs_calibration stereo_edvs.launch`
   * Record patterns as you did in mono mode (Patterns are stored if they appear in both cameras simultaneously)
   * *Start Calibration* and *Save Calibration* (The .yaml files will be overwritten)
-  
+
 <!-- TODO: provide screenshots -->
 
 
@@ -159,7 +159,7 @@ The image_pipeline is designed to process complete frames of pixel-images. Thus,
 Usage:
  * Start eDVS event output: `$ roslaunch edvs_ros_driver edvs-stereo.launch`
  * Render images and display stages of image_pipelines stereo processing: `$ roslaunch edvs_ros_driver stereo-display.launch`
- 
+
 #### Elsewhere
 The calibration uses a [Plumb Bob](http://www.vision.caltech.edu/bouguetj/calib_doc/htmls/parameters.html) distortion model, which is a sufficient and simple model of radial and tangential distortion.  
 The intrinsic camera matrix is the standard 3x3 matrix containing focal lengths (fx, fy) and principal point(cx, cy).  
@@ -234,7 +234,7 @@ In our animation of pattern recognition you can observe how (1) the pattern shif
 ![Image](images/patterns_small.gif)
 
 #### Wrong Buffering rejects Events
-The buffer in the original `eDVS.h` read all available bytes on the serial interface. Sometimes, the buffer ended in the middle of an event package. Then, it rejected the package, because it was incomplete. Our solution was to always read at least six bytes from the serial before we try to process it. 
+The buffer in the original `eDVS.h` read all available bytes on the serial interface. Sometimes, the buffer ended in the middle of an event package. Then, it rejected the package, because it was incomplete. Our solution was to always read at least six bytes from the serial before we try to process it.
 
 #### Original eDVS.h without Timestamps
 The original `eDVS.h` did not provide timestamps. Hence, we implemented this functionality ourselves. As we learned later, there is an improved version available at [edvstools](https://github.com/Danvil/edvstools).
@@ -267,3 +267,70 @@ Later, we switched to the "E2" timestamp format and used a [Boost circular buffe
 There already exists an improved version of the basic EDVS.h file, which was the starting point for the ROS driver. This early EDVS.h is very limited in functionality. Further efforts regarding the eDVS calibration topic should consider switching to the most recent version of [the library (edvstools)](https://github.com/Danvil/edvstools).
 
 
+## Tools
+
+### Store detected patterns
+
+In order to analyze, which points where detected, one can record the result from e.g. these topics:
+- /dvs_calibration/detected_points_left_or_single
+- /dvs_calibration/detected_points_left_or_single_pattern
+
+
+Here a short example, how to e.g. record and view the data:
+```
+#first source resources
+source devel/setup.bash
+
+#run the calibration interface
+roslaunch dvs_calibration intrinsic_edvs.launch
+
+#now, on e.g. other terminal
+#this will display only the transition maps with detected points
+rosrun image_view image_view image:=/dvs_calibration/detected_points_left_or_single_pattern &
+
+#this will show the detected points messages
+rostopic echo /dvs_calibration/detected_points_left_or_single &
+
+#this will record both of them in a file
+rosbag record /dvs_calibration/detected_points_left_or_single_pattern /dvs_calibration/detected_points_left_or_single
+```
+
+### Playback patterns
+
+For playback of the recorded data, run:
+```
+roscore &
+
+#this will show the detected points messages
+rostopic echo /dvs_calibration/detected_points_left_or_single &
+
+#play in an endless loop the file
+rosbag play -l 2015-12-14-15-17-38.bag
+
+#or step through the file: press p in the command window or
+#space to pause playback
+#rosbag play --pause 2015-12-14-15-17-38.bag
+```
+
+### Plot patterns with matplotlib
+
+first, convert rosbag file to csv
+```
+rostopic echo -b 2015-12-22-00-53-33.bag -p /dvs_right/out/image_object_points > stereo-right.csv
+rostopic echo -b 2015-12-22-00-53-33.bag -p /dvs_left/out/image_object_points > stereo-left.csv
+```
+
+then, plot it using a small python script
+```
+python utils/plot.py stereo-right.csv
+#or try two or more files at once
+python utils/plot.py stereo-right.csv stereo-left.csv
+```
+
+for 3d recordings, you can also use
+```
+python utils/plot3d.py ../ttyUSB0.yaml ../ttyUSB1.yaml points-left.csv points-right.csv
+
+#or, if like usually, yaml with calibration info is stored in home file
+python utils/plot3d.py ~/.ros/camera_info/eDVS128-_dev_ttyUSB0.yaml ~/.ros/camera_info/eDVS128-_dev_ttyUSB1.yaml points-left.csv points-right.csv
+```
