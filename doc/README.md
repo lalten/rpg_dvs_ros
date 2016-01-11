@@ -23,19 +23,64 @@ The following sections will give a precise overview of the project goal, problem
   * [Ideas for Future Improvements](#ideas-for-future-improvements)
     * [Improvements to eDVS Ros Driver](#improvements-to-edvs-ros-driver)
 
-## Project Goal
+## Project Summary
+
+### Project Goal
 
 In order to extract depth information from a stereo camera setup, most methods require some information about their positioning towards each other. The geometrical and intrinsic camera parameters as well as the rectification matrix are necessary to calculate world coordinates from image features. A number of tools and a lot of literature on this topic exists and is in widespread use the research community and industry. The calibration procedure for conventional cameras is highly standardized.  
 Dynamic Vision Sensors are a promising new type of sensor that works with events instead of frames. Like traditional cameras, the mounted lens needs to be calibrated to achieve exact depth information. However, because of the difference in information representation between the two kinds of sensors, conventional calibration procedures like checkerboard corner detection cannot be applied. This research project aims to develop a method that facilitates extracting the parameters from a vision stream of a stereo eDVS camera setup.
 
-### What is an eDVS?
+### Initial Plan
+
+In the beginning of the project, the core thought of our plan was the following: Get as fast as possible to a working calibration setup and then iterate on this initial setup. Therefore, we have chosen to use existing software and methods to calibrate a camera. In details, the road map included:
+
+  * Plum Bob camera model (as in OpenCV library): Simplest method, which is in use for normal cameras with usual lenses (not fish-eye lenses) and should therefore also work for an eDVS
+  * Assumption of one planar stereo pair with overlapping field of view as it is the most common setup and simplifies the calibration method
+  * Implement eDVS driver for ROS in order to profit from existing image processing tools and to run stand alone (open source and e.g. without Matlab)
+  * Use available user interface of ROS (ros rqt) to make calibration run more user friendly
+  * Use existing LED board for calibration: Provides wider viewing angles and better frequency tracking than an animated image displayed on a computer monitor.  
+  * Benchmark mathematical model using reprojection
+  * Benchmark stereo setup using ground-truth data and a calibration rig
+
+### Key Challenges
+
+The issues in our project confirmed our approach to focus on a simple working calibration setup in the beginning. A summary of the main obstacles are listed below:
+
+  * **eDVS Driver**:
+    - The available protocol of the event stream does not provide a reliable method to find the beginning of packets. Especially the "E1" type, which we used at first, often lead to wrong packet beginnings and therefore corrupted data.
+    - The hardware supports to set biases. But even with the help of our supervisors, we could not implement a working version. The camera freezes as soon as biases are read or changed.
+    - Under-documented protocol, rough or not available drivers made our own modifications necessary and error prone.
+  * **LED Board**:
+    - Reflections at the corner of the LED board had negative influence on the pattern detection.
+    - The original software of the board did not fit our purpose: Several different blinking frequencies and too many blinking LEDs at once (80) made detection overly complicated or even impossible.
+    - Movements of the board or cameras during the calibration process introduced blur over time.
+    - Missing documentation of the LED board firmware made changes very challenging and time consuming.  
+  * **Pattern detection issues**:
+    - The key challenge was to reliably detect the LED pattern in the event stream. Many factors, like movements, too many LED points, reflections, dark light, noise, limited optics and low sensor resolution made this task very complicated to master.
+    - Even with a more reliable detection method, sometimes the patterns are spurious or even wrong. Consequentially, we introduced an optional manual step to exclude wrong patterns from the calibration step.
+  * **Varying intrinsic camera parameters**: The sometimes substantial differences in the intrinsic parameters of two cameras lead to problems in the stereo rectification: It impeded to correctly identify a plausible rectification matrix. Therefore, the 3D reconstruction is sometimes very challenging.
+
+### Summary of Results
+
+Our proposed method does successfully calibrate, undistort and rectify mono or stereo setups.  
+
+In our evaluation, we found that quality issues persists: A repeated calibration of one camera using the same setup led to varying intrinsic camera parameters. Especially the focal length and the principal point of view varied more than 15%.
+
+### Future Work
+
+We achieved all of the project goals. Still, there are many areas to improve our presented solution. We propose two main points:
+
+  * **Repeatable identification of intrinsic camera parameters**: Investigate main influence on varying performance and results (e.g. limitations of camera model, noisy data)
+  * **Provide additional calibration guidance**: As an example, add an assistant, which guides the user through the calibration process (e.g. connect cameras, automatically estimate quality of available patterns).
+
+## What is an eDVS?
 
 An eDVS (embedded Dynamic Vision Sensor) produces an event stream. Compared to a usual frame-based camera, the eDVS produces an event every time a pixel changes. This key difference enables for example very fast feedback cycles (<5ms). The used  so-called silicon retina chips are developed by the [The Institute of Neuroinformatics Zürich](https://www.ini.uzh.ch/), which also provides [further information](http://siliconretina.ini.uzh.ch/wiki/index.php). In our project we used the miniaturized [eDVS](https://wiki.lsr.ei.tum.de/nst/programming/edvsgettingstarted).
 
 ## Software Setup
 
 ### Existing Software as Starting Point
-Camera calibration and rectification is already done routinely for &bdquo;normal&ldquo;, frame-based cameras. Therefore, there exist many tools to tackle the task. One of them is the open-source computer vision library [OpenCV](http://opencv.org/). Based on this library, the open source [Robot Operating System (ROS)](http://wiki.ros.org/camera_calibration) provides a package, called [Camera Calibration](http://wiki.ros.org/camera_calibration). It helps to facilitate the calibration process of &bdquo;monocular or stereo cameras using a checkerboard calibration target&ldquo; <sup>[1](http://wiki.ros.org/camera_calibration)</sup>. Unfortunately, it is only for frame-based cameras. For that reason, the [Robotics and Perception Group of Zurich](http://rpg.ifi.uzh.ch/) published another open-source package for ROS called [rpg_dvs_ros](https://github.com/uzh-rpg/rpg_dvs_ros). The software tries to use existing parts of the camera_calibration package and OpenCV again.
+Camera calibration and rectification is already done routinely for "normal", frame-based cameras. Therefore, there exist many tools to tackle the task. One of them is the open-source computer vision library [OpenCV](http://opencv.org/). Based on this library, the open source [Robot Operating System (ROS)](http://wiki.ros.org/camera_calibration) provides a package, called [Camera Calibration](http://wiki.ros.org/camera_calibration). It helps to facilitate the calibration process of &bdquo;monocular or stereo cameras using a checkerboard calibration target&ldquo; <sup>[1](http://wiki.ros.org/camera_calibration)</sup>. Unfortunately, it is only for frame-based cameras. For that reason, the [Robotics and Perception Group of Zurich](http://rpg.ifi.uzh.ch/) published another open-source package for ROS called [rpg_dvs_ros](https://github.com/uzh-rpg/rpg_dvs_ros). The software tries to use existing parts of the camera_calibration package and OpenCV again.
 
 Instead of trying to reinvent the wheel again, we think the best approach is to build upon proven existing software. Therefore, this project uses the rpg_dvs_ros  package as starting point. We forked the original repository in order to implement and add our new features.
 
@@ -86,7 +131,7 @@ Supported Commands:
  !E4   - 6 bytes per event (as above followed by 32bit timestamp 1us res)
 ```
 
-> **Note** When sending multiple commands in one echo, e.g. `$ echo -ne 'R\n!S2\n!E1\nE+\n' > /dev/ttyUSB0`, the eDVS microcontroller might behave unexpected. We experienced some issues like the camera not starting to send data. As a workaround, send the commands separately and wait a little in between each of them.
+> **Note** When sending multiple commands in one echo, e.g. `$ echo -ne 'R\n!S2\n!E1\nE+\n' > /dev/ttyUSB0`, the eDVS microcontroller might behave unexpected. We experienced some issues like the camera not starting to send data.
 
 The eDVS driver for ROS is based on an [EDVS.h file from NST TUM](https://wiki.lsr.ei.tum.de/nst/programming/edvs-cpp). Our newly developed `edvs_ros_driver` package uses `EDVS.h` to exchange data with the hardware. It's main purpose is the setup and integration, mainly
 - reset eDVS and set proper event format
@@ -104,6 +149,18 @@ Basic flow in the calibrated stereo case:
 
 Computation graph during stereo calibration with activated pattern picker tool:
 <br/><img src="images/graph_calibration_edvs_stereo.png" width="100%"/>
+
+## Calibration Model
+
+The basis of the model is a so-called [pinhole camera model](http://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html). The calibration uses an extended version, the [Plumb Bob](http://www.vision.caltech.edu/bouguetj/calib_doc/htmls/parameters.html) distortion model, which is a sufficient and simple model of radial and tangential distortion.  
+The intrinsic camera matrix is the standard 3x3 matrix containing focal lengths (fx, fy) and principal point(cx, cy).  
+In the stereo case, the calibration also provides rectification and projection matrices.  
+The rectification matrix is the rotation matrix that aligns the camera coordinate systems to the ideal stereo image plane so that epipolar lines are parallel.  
+The projection matrix is the 3x4 stereo extension of the intrinsic matrix. It adds the position of the second camera's optical center in the first camera's image frame.  
+You can read the full specs in the [CameraInfo ROS message documentation](http://docs.ros.org/api/sensor_msgs/html/msg/CameraInfo.html).
+
+Given a 3D point [X Y Z]', the projection (x, y) of the point onto the rectified image is given by:
+<br/><img src="https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/eqn_3D_proj.svg" height="129px"/>
 
 ## Calibration Walkthrough
 1. Setup
@@ -129,7 +186,7 @@ Computation graph during stereo calibration with activated pattern picker tool:
     * Start fresh by pressing the /Reset/ button in top left panel (might need to resize window)
     * Successful pattern recognitions increment counter in top left
     * Don't move [too much](#movements-during-calibration-process)
-    * Try to capture enough patterns close to image edges, because lens distortion increases radially. Check &bdquo;Capture Images&ldquo; at MathWorks's single camera [calibration documentation](http://de.mathworks.com/help/vision/ug/single-camera-calibrator-app.html#bt19jdq-1).
+    * Try to capture enough patterns close to image edges, because lens distortion increases radially. Check "Capture Images" at MathWorks's single camera [calibration documentation](http://de.mathworks.com/help/vision/ug/single-camera-calibrator-app.html#bt19jdq-1).
     * Capture something like 40 patterns
   * Calculate and save intrinsic calibration
     * Hit the *Start Calibration* button to start calculations (this freezes rqt).
@@ -161,20 +218,11 @@ Usage:
  * Render images and display stages of image_pipelines stereo processing: `$ roslaunch edvs_ros_driver stereo-display.launch`
 
 #### Elsewhere
-The calibration uses a [Plumb Bob](http://www.vision.caltech.edu/bouguetj/calib_doc/htmls/parameters.html) distortion model, which is a sufficient and simple model of radial and tangential distortion.  
-The intrinsic camera matrix is the standard 3x3 matrix containing focal lengths (fx, fy) and principal point(cx, cy).  
-In the stereo case, the calibration also provides rectification and projection matrices.  
-The rectification matrix is the rotation matrix that aligns the camera coordinate systems to the ideal stereo image plane so that epipolar lines are parallel.  
-The projection matrix is the 3x4 stereo extension of the intrinsic matrix. It adds the position of the second camera's optical center in the first camera's image frame.  
-You can read the full specs in the [CameraInfo ROS message documentation](http://docs.ros.org/api/sensor_msgs/html/msg/CameraInfo.html).
-
-Given a 3D point [X Y Z]', the projection (x, y) of the point onto the rectified image is given by:
-<br/><img src="https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/eqn_3D_proj.svg" height="129px"/>
 
 The calibration data can easily be used in other environments. The following example generates a Matlab [cameraParameters](https://mathworks.com/help/vision/ref/cameraparameters-class.html) object:
 ```
 cp = cameraParameters( ...
-    'IntrinsicMatrix', [164.013, 0, 80.124; 0, 164.875, 44.202; 0, 0, 1], ...
+    'IntrinsicMatrix', [164.0138, 0, 80.1241; 0, 164.8755, 44.2025; 0, 0, 1], ...
     'RadialDistortion', [-0.2875, 0.1980], ...
     'TangentialDistortion', [-0.0038, 0.0081]);
 ```
@@ -187,27 +235,36 @@ See [Calibration Details and Parameters](../README.md#calibration-details-and-pa
 
 ## Results
 
-### Intrinsic Camera Parameters
+### Intrinsic and Extrinsic Camera Parameters
 
-In the comparison of an original image vs. undistorted image below, we can see that originally straight lines of events that were curved by lens distortion appear straight again after undistortion.
+Example of an original image vs. undistorted image:
 ![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/original-vs-undistored-image.svg)
 
-Using our Matlab [script](scripts/distortion.m), we visualized the magnitude and spatial distribution of a typical result of eDVS lens distortion detection. We can see that the distortion is not centered around the image center, probably because the sensor and its lens are not perfectly aligned mechanically. As expected from the mounted type of lens, the distortion increases radially around the principal point.
+Visualization of eDVS lens distortion using our Matlab [script](scripts/distortion.m).
 <br/><img src="https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/distortion.svg" height="500px"/>
 
-### Extrinsic Parameters and 3D Reconstruction
-With successful pattern capture capabilities, 3D point reconstruction can be attempted. The plot below shows the camera positions as detected during calibration of extrinsic parameters in red. Three 3x4 LED board patterns in different distances are visualized in green, orange and blue. The plot was created with a Python [script](../utils/plot3d.py).
+### 3D Reconstruction
+With successful pattern capture capabilities, 3D point reconstruction can be attempted. The plot below shows the camera positions as detected during calibration in red. Three 3x4 LED board patterns in different distances are visualized in green, orange and blue. The plot was created with a Python [script](../utils/plot3d.py).
 <br/><img src="https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/plot_3d_reconstruction.svg" height="500px"/>
 
-The two .yaml files of an successful 3D calibration are provided in [/cal_example/2015-12-22-00-53-33-eDVS128-_dev_ttyUSB0.yaml](cal_example/2015-12-22-00-53-33-eDVS128-_dev_ttyUSB0.yaml) and [...ttyUSB1.yaml](cal_example/2015-12-22-00-53-33-eDVS128-_dev_ttyUSB1.yaml)
+### Benchmark
 
-### Benchmark Idea
+#### Mathematical Model Benchmark
+
+After a model is calculated, one can check, how good the model fits with the provided LED points. The used LED points will be projected to the world model and then reprojected from the model to the image. The euclidean distance of the real input image point and the reprojected point will be used to as error. The reprojection error provided after the calibration is the root mean square over all these errors. For example, an reprojection error of 3.0 would indicate, that, on average, each projected point is 3px away from the original point.
+
+> **Where can I find the value in the interface?** The reprojection error is displayed in a text field in the calibration interface, after the calibration has successfully finished.
+
+A small reprojection error does not imply a good world model. It can only describe, how good the provided calibration points can fit into one common model. Therefore, a lot of more points might even increase this error, as every new point can add noise.   
+
+
+#### Benchmark using Ground Truth
 
 One goal was to create an benchmark for the calibration and rectification result. Our requirements were to be reproducible and easy to perform. It should provide ground truth and according calculated depth data. This enables to calculate the 3D reprojection error.
 
 One approach to providing ground truth is using an marker based infrared optical tracking system. While such a system is available at the NST chair, the anticipated time for setting up and understanding the system did not seem to be worthwhile given the introduced spatial noise in ground truth and increased complexity of the experimental setup.
 
-Instead, we propose to use a laser-cut high density fiberboard construction to reproducibly and accurately move the LED board. The eDVS stereo setup is mounted on the construction. The board moves on a Z-axis rail, where it snaps in at fixed positions. When both eDVS sensors capture the same feature (e.g. the blinking pattern), we can triangulate the feature's 3D positions with the help of the prerecorded camera calibration data being evaluated. The distance (delta) we can calculate between these 3D positions is compared to the Ground-truth distances which can easily measured or deduced from the rig's design files.  
+Instead, we propose to use a laser-cut high density [fiberboard construction](../utils/benchmark-led-board-holder-lasercut.svg) to reproducibly and accurately move the LED board. The eDVS stereo setup is mounted on the construction. The board moves on a Z-axis rail, where it snaps in at fixed positions. When both eDVS sensors capture the same feature (e.g. the blinking pattern), we can triangulate the feature's 3D positions with the help of the prerecorded camera calibration data being evaluated. The distance (delta) we can calculate between these 3D positions is compared to the Ground-truth distances which can easily measured or deduced from the rig's design files.  
 Using this method guarantees that the ground-truth data is the same for every run, even when the mounting position of the eDVS varies in the order of some millimeters.
 
 ### Learnings
@@ -231,15 +288,15 @@ Our solution is to use both (1) a statically mounted camera and (2) a fixed led 
 
 ![Image](https://cdn.rawgit.com/lalten/rpg_dvs_ros/doc/doc/images/led-board-moving-pattern.svg)
 
-In our animation of pattern recognition you can observe how the pattern shifts over the board over time. The recognized pixel coordinates of the same pattern points at different times vary relatively little (about &plusmn;0.3px max), because no movement is introduced.
+In our animation of pattern recognition you can observe how (1) the pattern shifts over the board and (2) how pixel coordinates of the same pattern points vary relatively little (about +- 0.3px max), because no movement is introduced.
 
 ![Image](images/patterns_small.gif)
 
 #### Wrong Buffering rejects Events
-The buffer in the originally provided `EDVS.h` include file reads all available bytes on the serial interface. Sometimes, the buffer ended in the middle of an event package. In that case, it rejects the package, because it is incomplete. Our first solution for this problem was to always read at least six bytes from the serial before we try to process it. Later, we used a [Boost circular buffer](http://www.boost.org/doc/libs/release/doc/html/circular_buffer.html) for processing. This ensured that no events were split and lost.
+The buffer in the original `eDVS.h` read all available bytes on the serial interface. Sometimes, the buffer ended in the middle of an event package. Then, it rejected the package, because it was incomplete. Our solution was to always read at least six bytes from the serial before we try to process it.
 
 #### Original eDVS.h without Timestamps
-The original `EDVS.h` did not provide timestamps. Hence, we implemented this functionality ourselves. As we learned later, there is an improved version available at [edvstools](https://github.com/Danvil/edvstools). Our implementing the &bdquo;E1&ldquo; mode enabled use of the transition map, which is necessary for recognition of patterns.
+The original `eDVS.h` did not provide timestamps. Hence, we implemented this functionality ourselves. As we learned later, there is an improved version available at [edvstools](https://github.com/Danvil/edvstools).
 
 #### Shifted X and Y Coordinates for On-Events
 Sometimes the sensor image shows shifted x and y values for on-events. The reason so far is not completely clear. We used the following quick-fix (while the calibration interface was running) in a separate terminal:
@@ -259,7 +316,7 @@ $ echo -ne '!E1\nE+\n' > /dev/ttyUSB0
 #now your events should be displayed correctly
 ```
 
-Later, we switched to the &bdquo;E2&ldquo; timestamp format and the aforementioned ring buffer processing, which removed the sporadic x/y shifts and mysterious noise at image borders (it seems that a few timestamp bytes were interpreted as X or Y some time).
+Later, we switched to the "E2" timestamp format and used a [Boost circular buffer](http://www.boost.org/doc/libs/release/doc/html/circular_buffer.html) for processing. This ensured that no events were split and lost. This also removed the sporadic x/y shifts and mysterious noise at image borders (it seems that a few timestamp bytes were interpreted as X or Y some time).
 
 
 ## Ideas for Future Improvements
