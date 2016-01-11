@@ -263,7 +263,7 @@ With successful pattern capture capabilities, 3D point reconstruction can be att
 
 After a model is calculated, one can check, how good the model fits with the provided LED points. The used LED points will be projected to the world model and then reprojected from the model to the image. The euclidean distance of the real input image point and the reprojected point will be used to as error. The reprojection error provided after the calibration is the root mean square over all these errors. For example, an reprojection error of 3.0 would indicate, that, on average, each projected point is 3px away from the original point.
 
-> **Where can I find the value in the interface?** The reprojection error is displayed in a text field in the calibration interface, after the calibration has successfully finished.
+> **Where can I find the reprojection error in the interface?** The value is displayed in a text field in the calibration interface, after the calibration has successfully finished.
 
 A small reprojection error does not imply a good world model. It can only describe, how good the provided calibration points can fit into one common model. Therefore, a lot of more points might even increase this error, as every new point can add noise.   
 
